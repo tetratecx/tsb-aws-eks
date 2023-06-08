@@ -4,8 +4,8 @@ source ${ROOT_DIR}/helpers.sh ;
 ENV_FILE=${ROOT_DIR}/env_aws.json ;
 
 # Environment settings parsing
-AWS_PROFILE=$(cat ${ENV_FILE} | jq -r ".aws.profile") ;
-AWS_RESOURCE_PREFIX=$(cat ${ENV_FILE} | jq -r ".aws.resource_prefix") ;
+AWS_PROFILE=$(cat ${ENV_FILE} | jq -r ".profile") ;
+AWS_RESOURCE_PREFIX=$(cat ${ENV_FILE} | jq -r ".resource_prefix") ;
 
 ACTION=${1} ;
 
@@ -88,7 +88,18 @@ function delete_eks_cluster {
 
 
 if [[ ${ACTION} = "login" ]]; then
-	aws configure --profile ${AWS_PROFILE} ;
+
+  if ! $(aws sts get-caller-identity --profile ${AWS_PROFILE} &>/dev/null); then
+    print_info "Login to aws-cli as profile '${AWS_PROFILE}'"
+    aws configure --profile ${AWS_PROFILE} ;
+  fi
+
+	if $(aws sts get-caller-identity --profile ${AWS_PROFILE} &>/dev/null); then
+    print_info "Using aws-cli as profile '${AWS_PROFILE}' works"
+  else
+    print_error "Failed to access aws through aws-cli with profile '${AWS_PROFILE}'" ;
+  fi
+
   exit 0 ;
 fi
 
@@ -115,6 +126,15 @@ if [[ ${ACTION} = "up" ]]; then
     cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${ENV_FILE}) ;
     cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
     cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
+
+    if [[ ! -f "${ROOT_DIR}/${cluster_kubeconfig}" ]]; then
+      echo "Writing kubeconfig file for cluster '${cluster_name}' in region '${cluster_region}' to '${ROOT_DIR}/${cluster_kubeconfig}'" ;
+      eksctl utils write-kubeconfig \
+        --cluster "${cluster_name}" \
+        --kubeconfig "${ROOT_DIR}/${cluster_kubeconfig}" \
+        --profile "${AWS_PROFILE}" \
+        --region "${cluster_region}" ;
+    fi
 
     if cluster_info_out=$(kubectl cluster-info --kubeconfig "${ROOT_DIR}/${cluster_kubeconfig}" 2>&1); then
       print_info "Cluster '${cluster_name}' running correctly in region '${cluster_region}'" ;
