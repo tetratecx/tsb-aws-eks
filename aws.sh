@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )"
-source ${ROOT_DIR}/helpers.sh
-ENV_FILE=${ROOT_DIR}/env_aws.json
+ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
+source ${ROOT_DIR}/helpers.sh ;
+ENV_FILE=${ROOT_DIR}/env_aws.json ;
 
 # Environment settings parsing
 AWS_PROFILE=$(cat ${ENV_FILE} | jq -r ".aws.profile") ;
 AWS_RESOURCE_PREFIX=$(cat ${ENV_FILE} | jq -r ".aws.resource_prefix") ;
 
-ACTION=${1}
+ACTION=${1} ;
 
 # Start an eks based kubernetes cluster
 #   args:
@@ -39,7 +39,7 @@ function start_eks_cluster {
   local cluster_vpc_cidr=$(echo ${json_config} | jq -r '.vpc_cidr') ;
 
   if $(eksctl get cluster ${cluster_name} --region ${cluster_region} --profile "${AWS_PROFILE}" -o json | jq -r ".[].Status" | grep "ACTIVE" &>/dev/null); then
-    echo "Cluster '${cluster_name}' in region '${cluster_region}' already running";
+    echo "Cluster '${cluster_name}' in region '${cluster_region}' already running" ;
   else
     echo "Create cluster '${cluster_name}' in region '${cluster_region}'" ;
     eksctl create cluster \
@@ -87,10 +87,9 @@ function delete_eks_cluster {
 }
 
 
-
 if [[ ${ACTION} = "login" ]]; then
-	aws configure --profile ${AWS_PROFILE}
-  exit 0
+	aws configure --profile ${AWS_PROFILE} ;
+  exit 0 ;
 fi
 
 if [[ ${ACTION} = "up" ]]; then
@@ -127,7 +126,7 @@ if [[ ${ACTION} = "up" ]]; then
     fi
   done
 
-  exit 0
+  exit 0 ;
 fi
 
 if [[ ${ACTION} = "down" ]]; then
@@ -148,7 +147,7 @@ if [[ ${ACTION} = "down" ]]; then
     wait ${eksctl_pids[${cluster_index}]} ;
   done
 
-  exit 0
+  exit 0 ;
 fi
 
 if [[ ${ACTION} = "info" ]]; then
@@ -159,7 +158,7 @@ if [[ ${ACTION} = "info" ]]; then
     cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
     cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
 
-    print_info "================================================== cluster ${cluster_name} =================================================="
+    print_info "================================================== cluster ${cluster_name} ==================================================" ;
     print_command "kubectl --kubeconfig ${cluster_kubeconfig} get cluster-info" ;
     kubectl --kubeconfig ${cluster_kubeconfig} cluster-info ;
     echo ;
@@ -167,12 +166,12 @@ if [[ ${ACTION} = "info" ]]; then
     kubectl --kubeconfig ${cluster_kubeconfig} get pods,svc -A ;
   done
 
-  exit 0
+  exit 0 ;
 fi
 
-echo "Please specify correct action:"
-echo "  - login"
-echo "  - up"
-echo "  - down"
-echo "  - info"
-exit 1
+echo "Please specify correct action:" ;
+echo "  - login" ;
+echo "  - up" ;
+echo "  - down" ;
+echo "  - info" ;
+exit 1 ;

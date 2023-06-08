@@ -8,6 +8,10 @@ help: ## This help
 
 .DEFAULT_GOAL := help
 
+.PHONY: up down
+up: awscli-login eks-up eks-info ## Bring up full demo scenario
+down: awscli-login eks-down ## Bring down full demo scenario
+
 
 .PHONY: prereq-check
 prereq-check: ## Check if prerequisites are installed
@@ -22,13 +26,13 @@ awscli-login: ## Login to AWS CLI
 	@/bin/sh -c './aws.sh login'
 
 .PHONY: eks-up
-eks-up: prereq-check ## Create k8s clusters using eksctl
+eks-up: prereq-check ## Create k8s clusters using eksctl (eta 16min)
 	@/bin/sh -c './aws.sh up'
 
 .PHONY: eks-down
-eks-down: prereq-check ## Delete k8s clusters using eksctl
+eks-down: ## Delete k8s clusters using eksctl (eta 10min)
 	@/bin/sh -c './aws.sh down'
 
 .PHONY: eks-info
-eks-info: prereq-check ## Get k8s clusters information
+eks-info: ## Get k8s clusters information
 	@/bin/sh -c './aws.sh info'
