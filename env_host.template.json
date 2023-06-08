@@ -1,0 +1,10 @@
+{
+  "istioctl_version": "1.15.7",
+  "kubectl_version": "1.25.10",
+  "tetrate_repo": {
+    "password": "<TSB_REPO_APIKEY>",
+    "url": "containers.dl.tetrate.io",
+    "user": "<TSB_REPO_USERNAME>"
+  },
+  "tsb_version": "1.6.2"
+}

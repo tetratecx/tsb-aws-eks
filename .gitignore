@@ -1,0 +1,8 @@
+# Local VSCode style
+.vscode/
+
+# Temporary setup resources
+output/
+
+# Credentials
+env_host.json

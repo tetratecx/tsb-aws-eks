@@ -1,0 +1,41 @@
+{
+  "eks": {
+    "clusters": [
+      {
+        "kubeconfig": "output/mgmt-kubeconfig.yaml",
+        "name": "mgmt",
+        "node_type": "m5.xlarge",
+        "nodes_max": 5,
+        "nodes_min": 3,
+        "region": "eu-west-1",
+        "tags": "tetrate:owner=bart,tetrate:team=sales:se,tetrate:purpose=poc,tetrate:lifespan=ongoing,tetrate:customer=coindcx",
+        "version": "1.25",
+        "vpc_cidr": "10.10.0.0/16"
+      },
+      {
+        "kubeconfig": "output/active-kubeconfig.yaml",
+        "name": "active",
+        "node_type": "m5.xlarge",
+        "nodes_max": 5,
+        "nodes_min": 3,
+        "region": "eu-west-1",
+        "tags": "tetrate:owner=bart,tetrate:team=sales:se,tetrate:purpose=poc,tetrate:lifespan=ongoing,tetrate:customer=coindcx",
+        "version": "1.25",
+        "vpc_cidr": "10.20.0.0/16"
+      },
+      {
+        "kubeconfig": "output/standby-kubeconfig.yaml",
+        "name": "standby",
+        "node_type": "m5.xlarge",
+        "nodes_max": 5,
+        "nodes_min": 3,
+        "region": "eu-west-2",
+        "tags": "tetrate:owner=bart,tetrate:team=sales:se,tetrate:purpose=poc,tetrate:lifespan=ongoing,tetrate:customer=coindcx",
+        "version": "1.25",
+        "vpc_cidr": "10.30.0.0/16"
+      }
+    ]
+  },
+  "profile": "tetrate-aws-tsb-poc",
+  "resource_prefix": "tsb-coindcx"
+}
