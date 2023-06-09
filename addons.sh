@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
 source ${ROOT_DIR}/helpers.sh ;
-ENV_FILE=${ROOT_DIR}/env_aws.json ;
+AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
 
 # Source addon functions
 source ${ROOT_DIR}/addons/argocd/install.sh ;
 source ${ROOT_DIR}/addons/argocd/api.sh ;
+source ${ROOT_DIR}/addons/clustersecret/install.sh ;
 source ${ROOT_DIR}/addons/gitea/install.sh ;
 source ${ROOT_DIR}/addons/gitea/api.sh ;
 source ${ROOT_DIR}/addons/registry/install.sh ;
@@ -15,14 +16,14 @@ ACTION=${1} ;
 
 if [[ ${ACTION} = "deploy" ]]; then
 
-  cluster_count=$(jq '.eks.clusters | length' ${ENV_FILE}) ;
+  cluster_count=$(jq '.eks.clusters | length' ${AWS_ENV_FILE}) ;
   
   # Verifying if clusters are successfully running and reachable
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${ENV_FILE}) ;
-    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
-    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
-    cluster_tsb_type=$(jq -r '.eks.clusters['${cluster_index}'].tsb_type' ${ENV_FILE}) ;
+    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
+    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
+    cluster_tsb_type=$(jq -r '.eks.clusters['${cluster_index}'].tsb_type' ${AWS_ENV_FILE}) ;
     
     if cluster_info_out=$(kubectl cluster-info --kubeconfig "${ROOT_DIR}/${cluster_kubeconfig}" 2>&1); then
       print_info "Cluster '${cluster_name}' running correctly in region '${cluster_region}'" ;
@@ -37,21 +38,23 @@ if [[ ${ACTION} = "deploy" ]]; then
       
   # Install addons in clusters
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${ENV_FILE}) ;
-    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
-    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
-    cluster_tsb_type=$(jq -r '.eks.clusters['${cluster_index}'].tsb_type' ${ENV_FILE}) ;
+    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
+    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
+    cluster_tsb_type=$(jq -r '.eks.clusters['${cluster_index}'].tsb_type' ${AWS_ENV_FILE}) ;
 
     case ${cluster_tsb_type} in
       "mp")
         echo "Depoying addons in tsb mp cluster '${cluster_name}' in region '${cluster_region}'" ;
         argocd_deploy "${cluster_kubeconfig}" ;
+        clustersecret_deploy "${cluster_kubeconfig}" ;
         gitea_deploy "${cluster_kubeconfig}" ;
         registry_deploy "${cluster_kubeconfig}" ;
         ;;
       "cp")
         echo "Depoying addons in tsb cp cluster '${cluster_name}' in region '${cluster_region}'" ;
         argocd_deploy "${cluster_kubeconfig}" ;
+        clustersecret_deploy "${cluster_kubeconfig}" ;
         ;;
       *)
         print_warning "Unknown tsb cluster type '${cluster_tsb_type}'" ;
@@ -62,10 +65,10 @@ if [[ ${ACTION} = "deploy" ]]; then
       
   # Wait for addons to be ready in clusters
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${ENV_FILE}) ;
-    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
-    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
-    cluster_tsb_type=$(jq -r '.eks.clusters['${cluster_index}'].tsb_type' ${ENV_FILE}) ;
+    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
+    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
+    cluster_tsb_type=$(jq -r '.eks.clusters['${cluster_index}'].tsb_type' ${AWS_ENV_FILE}) ;
 
     case ${cluster_tsb_type} in
       "mp")
@@ -90,12 +93,12 @@ fi
 
 if [[ ${ACTION} = "undeploy" ]]; then
 
-  cluster_count=$(jq '.eks.clusters | length' ${ENV_FILE}) ;
+  cluster_count=$(jq '.eks.clusters | length' ${AWS_ENV_FILE}) ;
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${ENV_FILE}) ;
-    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
-    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
-    cluster_tsb_type=$(jq -r '.eks.clusters['${cluster_index}'].tsb_type' ${ENV_FILE}) ;
+    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
+    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
+    cluster_tsb_type=$(jq -r '.eks.clusters['${cluster_index}'].tsb_type' ${AWS_ENV_FILE}) ;
 
     # Verifying if clusters are successfully running and reachable
     if cluster_info_out=$(kubectl cluster-info --kubeconfig "${ROOT_DIR}/${cluster_kubeconfig}" 2>&1); then
@@ -133,14 +136,14 @@ fi
 
 if [[ ${ACTION} = "info" ]]; then
 
-  cluster_count=$(jq '.eks.clusters | length' ${ENV_FILE}) ;
+  cluster_count=$(jq '.eks.clusters | length' ${AWS_ENV_FILE}) ;
   
   # Verifying if clusters are successfully running and reachable
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${ENV_FILE}) ;
-    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
-    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
-    cluster_tsb_type=$(jq -r '.eks.clusters['${cluster_index}'].tsb_type' ${ENV_FILE}) ;
+    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
+    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
+    cluster_tsb_type=$(jq -r '.eks.clusters['${cluster_index}'].tsb_type' ${AWS_ENV_FILE}) ;
     
     case ${cluster_tsb_type} in
       "mp")

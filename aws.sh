@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
 source ${ROOT_DIR}/helpers.sh ;
-ENV_FILE=${ROOT_DIR}/env_aws.json ;
+AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
 
 # Environment settings parsing
-AWS_PROFILE=$(cat ${ENV_FILE} | jq -r ".profile") ;
-AWS_RESOURCE_PREFIX=$(cat ${ENV_FILE} | jq -r ".resource_prefix") ;
+AWS_PROFILE=$(cat ${AWS_ENV_FILE} | jq -r ".profile") ;
+AWS_RESOURCE_PREFIX=$(cat ${AWS_ENV_FILE} | jq -r ".resource_prefix") ;
 
 ACTION=${1} ;
 
@@ -186,35 +186,35 @@ fi
 
 if [[ ${ACTION} = "up" ]]; then
 
-  cluster_count=$(jq '.eks.clusters | length' ${ENV_FILE}) ;
+  cluster_count=$(jq '.eks.clusters | length' ${AWS_ENV_FILE}) ;
 
   # Start eks clusters in parallel using eksctl in background task
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    start_eks_cluster "$(jq -r '.eks.clusters['${cluster_index}']' ${ENV_FILE})" &
+    start_eks_cluster "$(jq -r '.eks.clusters['${cluster_index}']' ${AWS_ENV_FILE})" &
     eksctl_pids[${cluster_index}]=$! ;
   done
 
   # Waiting for clusters started with eksctl to finish
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
-    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
+    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
     echo "Waiting for cluster '${cluster_name}' in region '${cluster_region}' to have started" ;
     wait ${eksctl_pids[${cluster_index}]} ;
   done
 
   # Enable ebs csi driver in cluster
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
-    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
+    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
     
     enable_ebs_csi_driver "${cluster_name}" "${cluster_region}" ;
   done
 
   # Verifying if clusters are successfully running and reachable
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${ENV_FILE}) ;
-    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
-    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
+    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
+    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
 
     echo "Writing kubeconfig file for cluster '${cluster_name}' in region '${cluster_region}' to '${ROOT_DIR}/${cluster_kubeconfig}'" ;
     eksctl utils write-kubeconfig \
@@ -239,26 +239,26 @@ fi
 
 if [[ ${ACTION} = "down" ]]; then
 
-  cluster_count=$(jq '.eks.clusters | length' ${ENV_FILE}) ;
+  cluster_count=$(jq '.eks.clusters | length' ${AWS_ENV_FILE}) ;
 
   # Delete iamserviceaccount for ebs csi driver in cluster
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
-    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
+    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
 
     delete_iamserviceaccount "${cluster_name}" "${cluster_region}" ;
   done
 
   # Delete eks clusters in parallel using eksctl in background task
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    delete_eks_cluster "$(jq -r '.eks.clusters['${cluster_index}']' ${ENV_FILE})" &
+    delete_eks_cluster "$(jq -r '.eks.clusters['${cluster_index}']' ${AWS_ENV_FILE})" &
     eksctl_pids[${cluster_index}]=$! ;
   done
 
   # Waiting for clusters deleted with eksctl to finish
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
-    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
+    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
     echo "Waiting for cluster '${cluster_name}' in region '${cluster_region}' to be deleted" ;
     wait ${eksctl_pids[${cluster_index}]} ;
   done
@@ -268,11 +268,11 @@ fi
 
 if [[ ${ACTION} = "info" ]]; then
  
-  cluster_count=$(jq '.eks.clusters | length' ${ENV_FILE}) ;
+  cluster_count=$(jq '.eks.clusters | length' ${AWS_ENV_FILE}) ;
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${ENV_FILE}) ;
-    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
-    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
+    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
+    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
 
     print_info "================================================== cluster ${cluster_name} ==================================================" ;
     print_command "kubectl --kubeconfig ${cluster_kubeconfig} get cluster-info" ;

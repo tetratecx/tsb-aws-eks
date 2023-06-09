@@ -26,11 +26,11 @@ awscli-login: ## Login to AWS CLI
 	@/bin/sh -c './aws.sh login'
 
 .PHONY: eks-up
-eks-up: prereq-check awscli-login ## Create k8s clusters using eksctl (eta 17min)
+eks-up: prereq-check awscli-login ## Create k8s clusters using eksctl [eta 17min]
 	@/bin/sh -c './aws.sh up'
 
 .PHONY: eks-down
-eks-down: ## Delete k8s clusters using eksctl (eta 11min)
+eks-down: ## Delete k8s clusters using eksctl [eta 11min]
 	@/bin/sh -c './aws.sh down'
 
 .PHONY: eks-info
@@ -38,13 +38,26 @@ eks-info: ## Get k8s clusters information
 	@/bin/sh -c './aws.sh info'
 
 .PHONY: addons-deploy
-addons-deploy: prereq-check ## Deploy cluster addons
+addons-deploy: prereq-check ## Deploy cluster addons (argcocd, gitea and registry)
 	@/bin/sh -c './addons.sh deploy'
 
 .PHONY: addons-undeploy
-addons-undeploy: ## Undeploy cluster addons
+addons-undeploy: ## Undeploy cluster addons (argcocd, gitea and registry)
 	@/bin/sh -c './addons.sh undeploy'
 
 .PHONY: addons-info
-addons-info: ## Get cluster addons information
+addons-info: ## Get cluster addons information (argcocd, gitea and registry)
 	@/bin/sh -c './addons.sh info'
+
+.PHONY: tsb-install
+tsb-install: prereq-check ## Install tsb mp and cp
+	@/bin/sh -c './tsb.sh registry-sync'
+	@/bin/sh -c './tsb.sh install'
+
+.PHONY: tsb-uninstall
+tsb-uninstall: ## Uninstall tsb mp and cp
+	@/bin/sh -c './tsb.sh uninstall'
+
+.PHONY: tsb-info
+tsb-info: ## Get tsb information
+	@/bin/sh -c './tsb.sh info'
