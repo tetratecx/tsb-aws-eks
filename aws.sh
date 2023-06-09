@@ -61,6 +61,70 @@ function start_eks_cluster {
   fi
 }
 
+# Enable EBS CSI driver for persistent volume claims
+#   args:
+#     (1) cluster name
+#     (2) cluster region
+function enable_ebs_csi_driver {
+  [[ -z "${1}" ]] && print_error "Please provide cluster name as 1st argument" && return 2 || local cluster_name="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide cluster region as 2nd argument" && return 2 || local cluster_region="${2}" ;
+
+  if $(aws iam list-open-id-connect-providers --profile "${AWS_PROFILE}" \
+        | grep $(aws eks describe-cluster \
+                  --name "${cluster_name}" \
+                  --output text \
+                  --profile "${AWS_PROFILE}" \
+                  --query "cluster.identity.oidc.issuer" \
+                  --region "${cluster_region}" | cut -d '/' -f 5) &>/dev/null); then
+    echo "Cluster '${cluster_name}' in region '${cluster_region}' already has an iam-oidc-provider associated"
+  else
+    eksctl utils associate-iam-oidc-provider \
+      --approve \
+      --cluster "${cluster_name}" \
+      --profile "${AWS_PROFILE}" \
+      --region "${cluster_region}" ;
+  fi
+
+  if $(eksctl get iamserviceaccount \
+        --cluster "${cluster_name}" \
+        --name "ebs-csi-controller-sa" \
+        --profile "${AWS_PROFILE}" \
+        --region "${cluster_region}" | grep "No iamserviceaccounts found" &>/dev/null); then
+    eksctl create iamserviceaccount \
+      --approve \
+      --attach-policy-arn "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy" \
+      --cluster "${cluster_name}" \
+      --name "ebs-csi-controller-sa" \
+      --namespace "kube-system" \
+      --profile "${AWS_PROFILE}" \
+      --region "${cluster_region}" \
+      --role-name "eksctl-${cluster_name}-${cluster_region}-EbsCsiDriverRole" \
+      --role-only ;
+  else
+    echo "Cluster '${cluster_name}' in region '${cluster_region}' already has an iamserviceaccount 'eksctl-${cluster_name}-${cluster_region}-EbsCsiDriverRole' created" ;
+    
+  fi
+
+  if $(eksctl get addon \
+        --cluster "${cluster_name}" \
+        --name "aws-ebs-csi-driver" \
+        --profile "${AWS_PROFILE}" \
+        --region "${cluster_region}" &>/dev/null); then
+    echo "Cluster '${cluster_name}' in region '${cluster_region}' already has addon 'aws-ebs-csi-driver' enabled" ;
+  else
+    eksctl create addon \
+      --cluster "${cluster_name}" \
+      --force \
+      --name "aws-ebs-csi-driver" \
+      --profile "${AWS_PROFILE}" \
+      --region "${cluster_region}" \
+      --service-account-role-arn "arn:aws:iam::$(aws sts get-caller-identity \
+                                                  --output text \
+                                                  --profile ${AWS_PROFILE} \
+                                                  --query Account):role/eksctl-${cluster_name}-${cluster_region}-EbsCsiDriverRole" ;
+  fi
+}
+
 # Delete an eks based kubernetes cluster
 #   args:
 #     (1) cluster json configuration
@@ -84,6 +148,23 @@ function delete_eks_cluster {
     --profile "${AWS_PROFILE}" \
     --region "${cluster_region}" ;
   rm -f "${ROOT_DIR}/${cluster_kubeconfig}" ;
+}
+
+# Delete IAM Service Account of EBS CSI driver for persistent volume claims
+#   args:
+#     (1) cluster name
+#     (2) cluster region
+function delete_iamserviceaccount {
+  [[ -z "${1}" ]] && print_error "Please provide cluster name as 1st argument" && return 2 || local cluster_name="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide cluster region as 2nd argument" && return 2 || local cluster_region="${2}" ;
+
+  echo "Delete iamserviceaccount 'ebs-csi-controller-sa' of cluster '${cluster_name}' in region '${cluster_region}'" ;
+  eksctl delete iamserviceaccount \
+    --cluster "${cluster_name}" \
+    --name "ebs-csi-controller-sa" \
+    --namespace "kube-system" \
+    --profile "${AWS_PROFILE}" \
+    --region "${cluster_region}" ;
 }
 
 
@@ -121,6 +202,14 @@ if [[ ${ACTION} = "up" ]]; then
     wait ${eksctl_pids[${cluster_index}]} ;
   done
 
+  # Enable ebs csi driver in cluster
+  for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
+    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
+    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
+    
+    enable_ebs_csi_driver "${cluster_name}" "${cluster_region}" ;
+  done
+
   # Verifying if clusters are successfully running and reachable
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
     cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${ENV_FILE}) ;
@@ -152,6 +241,14 @@ fi
 if [[ ${ACTION} = "down" ]]; then
 
   cluster_count=$(jq '.eks.clusters | length' ${ENV_FILE}) ;
+
+  # Delete iamserviceaccount for ebs csi driver in cluster
+  for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
+    cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
+    cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
+
+    delete_iamserviceaccount "${cluster_name}" "${cluster_region}" ;
+  done
 
   # Delete eks clusters in parallel using eksctl in background task
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do

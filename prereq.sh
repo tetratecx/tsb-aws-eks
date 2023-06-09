@@ -15,7 +15,7 @@ ACTION=${1} ;
 
 if [[ ${ACTION} = "check" ]]; then
 
-  DEPENDENCIES=( tctl expect kubectl aws eksctl jq curl nc argocd ) ;
+  DEPENDENCIES=( tctl expect kubectl aws eksctl jq curl nc argocd helm ) ;
 
   # check necessary dependencies are installed
   echo "Checking if all software dependencies installed : ok" ;

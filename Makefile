@@ -26,11 +26,11 @@ awscli-login: ## Login to AWS CLI
 	@/bin/sh -c './aws.sh login'
 
 .PHONY: eks-up
-eks-up: prereq-check awscli-login ## Create k8s clusters using eksctl (eta 16min)
+eks-up: prereq-check awscli-login ## Create k8s clusters using eksctl (eta 17min)
 	@/bin/sh -c './aws.sh up'
 
 .PHONY: eks-down
-eks-down: ## Delete k8s clusters using eksctl (eta 10min)
+eks-down: ## Delete k8s clusters using eksctl (eta 11min)
 	@/bin/sh -c './aws.sh down'
 
 .PHONY: eks-info
