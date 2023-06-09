@@ -27,7 +27,7 @@ function print_error {
   echo -e "${REDB_COLOR}${message}${END_COLOR}" ;
 }
 
-# Deploy gitea server in kubernetes
+# Deploy gitea server in kubernetes using helm
 #   args:
 #     (1) kubeconfig file
 #     (2) namespace (optional, default 'gitea')
@@ -52,7 +52,7 @@ function gitea_deploy {
   print_info "Installed helm chart for gitea" ;
 }
 
-# Undeploy gitea from kubernetes
+# Undeploy gitea from kubernetes using helm
 #   args:
 #     (1) kubeconfig file
 #     (2) namespace (optional, default 'gitea')
