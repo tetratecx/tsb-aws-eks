@@ -216,14 +216,13 @@ if [[ ${ACTION} = "up" ]]; then
     cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${ENV_FILE}) ;
     cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${ENV_FILE}) ;
 
-    if [[ ! -f "${ROOT_DIR}/${cluster_kubeconfig}" ]]; then
-      echo "Writing kubeconfig file for cluster '${cluster_name}' in region '${cluster_region}' to '${ROOT_DIR}/${cluster_kubeconfig}'" ;
-      eksctl utils write-kubeconfig \
-        --cluster "${cluster_name}" \
-        --kubeconfig "${ROOT_DIR}/${cluster_kubeconfig}" \
-        --profile "${AWS_PROFILE}" \
-        --region "${cluster_region}" ;
-    fi
+    echo "Writing kubeconfig file for cluster '${cluster_name}' in region '${cluster_region}' to '${ROOT_DIR}/${cluster_kubeconfig}'" ;
+    eksctl utils write-kubeconfig \
+      --cluster "${cluster_name}" \
+      --kubeconfig "${ROOT_DIR}/${cluster_kubeconfig}" \
+      --profile "${AWS_PROFILE}" \
+      --region "${cluster_region}" ;
+
 
     if cluster_info_out=$(kubectl cluster-info --kubeconfig "${ROOT_DIR}/${cluster_kubeconfig}" 2>&1); then
       print_info "Cluster '${cluster_name}' running correctly in region '${cluster_region}'" ;

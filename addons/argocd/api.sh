@@ -30,7 +30,7 @@ function argocd_get_version {
 
   curl --insecure --location --fail --silent --request GET \
     --header 'Content-Type: application/json' \
-    --url "${base_url}/api/version" | jq -r ".Version" ;
+    --url "${base_url}/api/version" ;
 }
 
 # Wait for argocd api to be ready

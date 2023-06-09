@@ -9,7 +9,7 @@ help: ## This help
 .DEFAULT_GOAL := help
 
 .PHONY: up down
-up: awscli-login eks-up eks-info ## Bring up full demo scenario
+up: awscli-login eks-up addons-deploy eks-info addons-info ## Bring up full demo scenario
 down: awscli-login eks-down ## Bring down full demo scenario
 
 
@@ -36,3 +36,15 @@ eks-down: ## Delete k8s clusters using eksctl (eta 11min)
 .PHONY: eks-info
 eks-info: ## Get k8s clusters information
 	@/bin/sh -c './aws.sh info'
+
+.PHONY: addons-deploy
+addons-deploy: prereq-check ## Deploy cluster addons
+	@/bin/sh -c './addons.sh deploy'
+
+.PHONY: addons-undeploy
+addons-undeploy: ## Undeploy cluster addons
+	@/bin/sh -c './addons.sh undeploy'
+
+.PHONY: addons-info
+addons-info: ## Get cluster addons information
+	@/bin/sh -c './addons.sh info'

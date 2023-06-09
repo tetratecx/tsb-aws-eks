@@ -9,6 +9,7 @@
         "nodes_min": 3,
         "region": "eu-west-1",
         "tags": "tetrate:owner=bart,tetrate:team=sales:se,tetrate:purpose=poc,tetrate:lifespan=ongoing,tetrate:customer=coindcx",
+        "tsb_type": "mp",
         "version": "1.25",
         "vpc_cidr": "10.10.0.0/16"
       },
@@ -20,6 +21,7 @@
         "nodes_min": 3,
         "region": "eu-west-1",
         "tags": "tetrate:owner=bart,tetrate:team=sales:se,tetrate:purpose=poc,tetrate:lifespan=ongoing,tetrate:customer=coindcx",
+        "tsb_type": "cp",
         "version": "1.25",
         "vpc_cidr": "10.20.0.0/16"
       },
@@ -31,6 +33,7 @@
         "nodes_min": 3,
         "region": "eu-west-2",
         "tags": "tetrate:owner=bart,tetrate:team=sales:se,tetrate:purpose=poc,tetrate:lifespan=ongoing,tetrate:customer=coindcx",
+        "tsb_type": "cp",
         "version": "1.25",
         "vpc_cidr": "10.30.0.0/16"
       }
