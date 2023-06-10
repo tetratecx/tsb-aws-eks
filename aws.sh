@@ -213,16 +213,15 @@ if [[ ${ACTION} = "info" ]]; then
     cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
     cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
 
-    print_info "================================================== eks cluster ${cluster_name} ==================================================" ;
-    print_command "kubectl --kubeconfig ${cluster_kubeconfig} get pods,svc -A -o wide" ;
-    kubectl --kubeconfig ${cluster_kubeconfig} get pods,svc -A -o wide ;
+    print_info "AWS EKS cluster '${cluster_name}' in region '${cluster_name}'" ;
+    print_command "kubectl --kubeconfig ${cluster_kubeconfig} cluster-info" ;
+    kubectl --kubeconfig ${cluster_kubeconfig} cluster-info ;
     echo
   done
 
 
   repo_region=$(jq -r '.ecr.region' ${AWS_ENV_FILE}) ;
   ecr_repository_url=$(get_ecr_repository_url "${AWS_PROFILE}" "${repo_region}") ;
-  print_info "================================================== ecr repository in region ${repo_region} ==================================================" ;
   print_info "ECR Repository URL: ${ecr_repository_url}" ;
   echo
 

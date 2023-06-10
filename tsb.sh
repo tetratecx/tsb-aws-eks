@@ -270,11 +270,39 @@ if [[ ${ACTION} = "install" ]]; then
 fi
 
 if [[ ${ACTION} = "uninstall" ]]; then
-
+  log_warning "Not implemented yet" ;
   exit 0 ;
 fi
 
 if [[ ${ACTION} = "info" ]]; then
+
+  cluster_count=$(jq '.eks.clusters | length' ${AWS_ENV_FILE}) ;
+  for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
+    cluster_tsb_type=$(jq -r '.eks.clusters['${cluster_index}'].tsb_type' ${AWS_ENV_FILE}) ;
+
+    if [[ "${cluster_tsb_type}" == "mp" ]]; then
+      mp_cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
+      mp_cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+      mp_cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
+      tsb_api_endpoint=$(kubectl --kubeconfig ${mp_cluster_kubeconfig} get svc -n tsb envoy --output jsonpath='{.status.loadBalancer.ingress[0].hostname}') ;
+
+      print_info "Management plane cluster ${mp_cluster_name} in region '${mp_cluster_region}':"
+      print_error "TSB GUI: https://${tsb_api_endpoint}:8443 (admin/admin)"
+      echo
+      print_command "kubectl --kubeconfig ${mp_cluster_kubeconfig} get pods -A"
+      echo
+    fi
+
+    if [[ "${cluster_tsb_type}" == "cp" ]]; then
+      cp_cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
+      cp_cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+      cp_cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
+
+      print_info "Control plane cluster ${cp_cluster_name} in region '${cp_cluster_region}':"
+      print_command "kubectl --kubeconfig ${cp_cluster_kubeconfig} get pods -A"
+      echo
+    fi
+  done
 
   exit 0 ;
 fi
