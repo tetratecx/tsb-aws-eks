@@ -9,7 +9,7 @@ help: ## This help
 .DEFAULT_GOAL := help
 
 .PHONY: up down
-up: awscli-login eks-up addons-deploy eks-info addons-info ## Bring up full demo scenario
+up: awscli-login eks-up addons-deploy tsb-install eks-info addons-info ## Bring up full demo scenario
 down: awscli-login eks-down ## Bring down full demo scenario
 
 
@@ -21,37 +21,36 @@ prereq-check: ## Check if prerequisites are installed
 prereq-install: ## Install prerequisites
 	@/bin/sh -c './prereq.sh install'
 
-.PHONY: awscli-login
-awscli-login: ## Login to AWS CLI
+.PHONY: aws-cli-login
+aws-cli-login: ## Login to AWS CLI
 	@/bin/sh -c './aws.sh login'
 
-.PHONY: eks-up
-eks-up: prereq-check awscli-login ## Create k8s clusters using eksctl [eta 17min]
+.PHONY: aws-up
+aws-up: prereq-check aws-cli-login ## Create eks clusters and ecr repository [eta 17min]
 	@/bin/sh -c './aws.sh up'
 
-.PHONY: eks-down
-eks-down: ## Delete k8s clusters using eksctl [eta 11min]
+.PHONY: aws-down
+aws-down: ## Delete eks clusters and ecr repository [eta 11min]
 	@/bin/sh -c './aws.sh down'
 
-.PHONY: eks-info
-eks-info: ## Get k8s clusters information
+.PHONY: aws-info
+aws-info: ## Get eks clusters and ecr repository information
 	@/bin/sh -c './aws.sh info'
 
 .PHONY: addons-deploy
-addons-deploy: prereq-check ## Deploy cluster addons (argcocd, gitea and registry)
+addons-deploy: prereq-check ## Deploy cluster addons (argcocd, gitea)
 	@/bin/sh -c './addons.sh deploy'
 
 .PHONY: addons-undeploy
-addons-undeploy: ## Undeploy cluster addons (argcocd, gitea and registry)
+addons-undeploy: ## Undeploy cluster addons (argcocd, gitea)
 	@/bin/sh -c './addons.sh undeploy'
 
 .PHONY: addons-info
-addons-info: ## Get cluster addons information (argcocd, gitea and registry)
+addons-info: ## Get cluster addons information (argcocd, gitea)
 	@/bin/sh -c './addons.sh info'
 
 .PHONY: tsb-install
 tsb-install: prereq-check ## Install tsb mp and cp
-	@/bin/sh -c './tsb.sh registry-sync'
 	@/bin/sh -c './tsb.sh install'
 
 .PHONY: tsb-uninstall

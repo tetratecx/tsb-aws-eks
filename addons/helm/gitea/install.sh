@@ -1,31 +1,10 @@
 # Helper functions to start, upgrade and remove gitea (a lightweight git server)
 #
 
-# Some colors
-END_COLOR="\033[0m"
-GREENB_COLOR="\033[1;32m"
-REDB_COLOR="\033[1;31m"
-
 GITEA_ADMIN_PASSWORD="gitea-admin"
 GITEA_ADMIN_USER="gitea-admin"
 GITEA_HTTP_PORT=3000
 GITEA_NAMESPACE="gitea"
-
-# Print info messages
-#   args:
-#     (1) message
-function print_info {
-  [[ -z "${1}" ]] && print_error "Please provide message as 1st argument" && return 2 || local message="${1}" ;
-  echo -e "${GREENB_COLOR}${message}${END_COLOR}" ;
-}
-
-# Print error messages
-#   args:
-#     (1) message
-function print_error {
-  [[ -z "${1}" ]] && print_error "Please provide message as 1st argument" && return 2 || local message="${1}" ;
-  echo -e "${REDB_COLOR}${message}${END_COLOR}" ;
-}
 
 # Deploy gitea server in kubernetes using helm
 #   args:
@@ -40,7 +19,7 @@ function gitea_deploy {
   [[ -z "${4}" ]] && local admin_password="${GITEA_ADMIN_PASSWORD}" || local admin_password="${4}" ;
 
   helm repo add gitea-charts https://dl.gitea.io/charts/ ;
-  helm repo update ;
+  helm repo update gitea-charts ;
 
   if $(helm status gitea --kubeconfig "${kubeconfig}" --namespace "${namespace}" &>/dev/null); then
     helm upgrade gitea gitea-charts/gitea \

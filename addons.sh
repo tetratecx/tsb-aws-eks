@@ -1,16 +1,12 @@
 #!/usr/bin/env bash
 ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
 source ${ROOT_DIR}/helpers.sh ;
-AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
+source ${ROOT_DIR}/addons/helm/argocd/install.sh ;
+source ${ROOT_DIR}/addons/helm/argocd/api.sh ;
+source ${ROOT_DIR}/addons/helm/gitea/install.sh ;
+source ${ROOT_DIR}/addons/helm/gitea/api.sh ;
 
-# Source addon functions
-source ${ROOT_DIR}/addons/argocd/install.sh ;
-source ${ROOT_DIR}/addons/argocd/api.sh ;
-source ${ROOT_DIR}/addons/clustersecret/install.sh ;
-source ${ROOT_DIR}/addons/gitea/install.sh ;
-source ${ROOT_DIR}/addons/gitea/api.sh ;
-source ${ROOT_DIR}/addons/registry/install.sh ;
-source ${ROOT_DIR}/addons/registry/api.sh ;
+AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
 
 ACTION=${1} ;
 
@@ -47,14 +43,11 @@ if [[ ${ACTION} = "deploy" ]]; then
       "mp")
         echo "Depoying addons in tsb mp cluster '${cluster_name}' in region '${cluster_region}'" ;
         argocd_deploy "${cluster_kubeconfig}" ;
-        clustersecret_deploy "${cluster_kubeconfig}" ;
         gitea_deploy "${cluster_kubeconfig}" ;
-        registry_deploy "${cluster_kubeconfig}" ;
         ;;
       "cp")
         echo "Depoying addons in tsb cp cluster '${cluster_name}' in region '${cluster_region}'" ;
         argocd_deploy "${cluster_kubeconfig}" ;
-        clustersecret_deploy "${cluster_kubeconfig}" ;
         ;;
       *)
         print_warning "Unknown tsb cluster type '${cluster_tsb_type}'" ;
@@ -75,7 +68,6 @@ if [[ ${ACTION} = "deploy" ]]; then
         echo "Waiting for addons to be ready in tsb mp cluster '${cluster_name}' in region '${cluster_region}'" ;
         argocd_wait_api_ready $(argocd_get_http_url "${cluster_kubeconfig}") ;
         gitea_wait_api_ready $(gitea_get_http_url  "${cluster_kubeconfig}") ;
-        registry_wait_api_ready $(registry_get_http_url  "${cluster_kubeconfig}") ;
         ;;
       "cp")
         echo "Waiting for addons to be ready in tsb cp cluster '${cluster_name}' in region '${cluster_region}'" ;
@@ -111,7 +103,6 @@ if [[ ${ACTION} = "undeploy" ]]; then
           echo "Undepoying addons in tsb mp cluster '${cluster_name}' in region '${cluster_region}'" ;
           argocd_undeploy "${cluster_kubeconfig}" ;
           gitea_undeploy "${cluster_kubeconfig}" ;
-          registry_undeploy "${cluster_kubeconfig}" ;
           ;;
         "cp")
           echo "Undepoying addons in tsb cp cluster '${cluster_name}' in region '${cluster_region}'" ;
@@ -150,7 +141,6 @@ if [[ ${ACTION} = "info" ]]; then
         print_info "Addons in tsb mp cluster '${cluster_name}' in region '${cluster_region}'" ;
         print_info " - ArgoCD:   $(argocd_get_http_url ${cluster_kubeconfig})" ;
         print_info " - Gitea:    $(gitea_get_http_url ${cluster_kubeconfig})" ;
-        print_info " - Registry: $(registry_get_http_url ${cluster_kubeconfig})" ;
         echo ;
         ;;
       "cp")

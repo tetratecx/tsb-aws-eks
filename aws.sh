@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
 source ${ROOT_DIR}/helpers.sh ;
+source ${ROOT_DIR}/addons/aws/ebs-csi.sh ;
+source ${ROOT_DIR}/addons/aws/ecr.sh ;
+
 AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
 
 # Environment settings parsing
@@ -11,7 +14,9 @@ ACTION=${1} ;
 
 # Start an eks based kubernetes cluster
 #   args:
-#     (1) cluster json configuration
+#     (1) aws profile
+#     (2) aws resource prefix
+#     (3) cluster json configuration
 #   example:
 #      {
 #        "kubeconfig": "output/active-kubeconfig.yaml",
@@ -21,12 +26,15 @@ ACTION=${1} ;
 #        "nodes_min": 3,
 #        "region": "eu-west-1",
 #        "tags": "tetrate:owner=bart,tetrate:team=sales:se,tetrate:purpose=poc,tetrate:lifespan=ongoing,tetrate:customer=coindcx",
+#        "tsb_type": "cp",
 #        "version": "1.25",
 #        "vpc_cidr": "10.20.0.0/16"
 #      }
 #
 function start_eks_cluster {
-  [[ -z "${1}" ]] && print_error "Please provide cluster json configuration as 1st argument" && return 2 || local json_config="${1}" ;
+  [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide aws resource prefix as 1st argument" && return 2 || local aws_prefix="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide cluster json configuration as 1st argument" && return 2 || local json_config="${3}" ;
 
   local cluster_kubeconfig=$(echo ${json_config} | jq -r '.kubeconfig') ;
   local cluster_name=$(echo ${json_config} | jq -r '.name') ;
@@ -38,21 +46,21 @@ function start_eks_cluster {
   local cluster_version=$(echo ${json_config} | jq -r '.version') ;
   local cluster_vpc_cidr=$(echo ${json_config} | jq -r '.vpc_cidr') ;
 
-  if $(eksctl get cluster ${cluster_name} --region ${cluster_region} --profile "${AWS_PROFILE}" -o json | jq -r ".[].Status" | grep "ACTIVE" &>/dev/null); then
-    echo "Cluster '${cluster_name}' in region '${cluster_region}' already running" ;
+  if $(eksctl get cluster ${cluster_name} --region ${cluster_region} --profile "${aws_profile}" -o json | jq -r ".[].Status" | grep "ACTIVE" &>/dev/null); then
+    echo "EKS cluster '${cluster_name}' in region '${cluster_region}' already running" ;
   else
     echo "Create cluster '${cluster_name}' in region '${cluster_region}'" ;
     eksctl create cluster \
       --asg-access \
       --external-dns-access \
-      --instance-prefix "${AWS_RESOURCE_PREFIX}" \
+      --instance-prefix "${aws_prefix}" \
       --kubeconfig "${ROOT_DIR}/${cluster_kubeconfig}" \
       --name "${cluster_name}" \
       --node-type "${cluster_node_type}" \
       --nodes ${cluster_nodes_min} \
       --nodes-max ${cluster_nodes_max} \
       --nodes-min ${cluster_nodes_min} \
-      --profile "${AWS_PROFILE}" \
+      --profile "${aws_profile}" \
       --region "${cluster_region}" \
       --ssh-access \
       --tags "${cluster_tags}" \
@@ -61,73 +69,10 @@ function start_eks_cluster {
   fi
 }
 
-# Enable EBS CSI driver for persistent volume claims
-#   args:
-#     (1) cluster name
-#     (2) cluster region
-function enable_ebs_csi_driver {
-  [[ -z "${1}" ]] && print_error "Please provide cluster name as 1st argument" && return 2 || local cluster_name="${1}" ;
-  [[ -z "${2}" ]] && print_error "Please provide cluster region as 2nd argument" && return 2 || local cluster_region="${2}" ;
-
-  if $(aws iam list-open-id-connect-providers --profile "${AWS_PROFILE}" \
-        | grep $(aws eks describe-cluster \
-                  --name "${cluster_name}" \
-                  --output text \
-                  --profile "${AWS_PROFILE}" \
-                  --query "cluster.identity.oidc.issuer" \
-                  --region "${cluster_region}" | cut -d '/' -f 5) &>/dev/null); then
-    echo "Cluster '${cluster_name}' in region '${cluster_region}' already has an iam-oidc-provider associated"
-  else
-    eksctl utils associate-iam-oidc-provider \
-      --approve \
-      --cluster "${cluster_name}" \
-      --profile "${AWS_PROFILE}" \
-      --region "${cluster_region}" ;
-  fi
-
-  if $(eksctl get iamserviceaccount \
-        --cluster "${cluster_name}" \
-        --name "ebs-csi-controller-sa" \
-        --profile "${AWS_PROFILE}" \
-        --region "${cluster_region}" | grep "No iamserviceaccounts found" &>/dev/null); then
-    eksctl create iamserviceaccount \
-      --approve \
-      --attach-policy-arn "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy" \
-      --cluster "${cluster_name}" \
-      --name "ebs-csi-controller-sa" \
-      --namespace "kube-system" \
-      --profile "${AWS_PROFILE}" \
-      --region "${cluster_region}" \
-      --role-name "eksctl-${cluster_name}-${cluster_region}-EbsCsiDriverRole" \
-      --role-only ;
-  else
-    echo "Cluster '${cluster_name}' in region '${cluster_region}' already has an iamserviceaccount 'eksctl-${cluster_name}-${cluster_region}-EbsCsiDriverRole' created" ;
-    
-  fi
-
-  if $(eksctl get addon \
-        --cluster "${cluster_name}" \
-        --name "aws-ebs-csi-driver" \
-        --profile "${AWS_PROFILE}" \
-        --region "${cluster_region}" &>/dev/null); then
-    echo "Cluster '${cluster_name}' in region '${cluster_region}' already has addon 'aws-ebs-csi-driver' enabled" ;
-  else
-    eksctl create addon \
-      --cluster "${cluster_name}" \
-      --force \
-      --name "aws-ebs-csi-driver" \
-      --profile "${AWS_PROFILE}" \
-      --region "${cluster_region}" \
-      --service-account-role-arn "arn:aws:iam::$(aws sts get-caller-identity \
-                                                  --output text \
-                                                  --profile ${AWS_PROFILE} \
-                                                  --query Account):role/eksctl-${cluster_name}-${cluster_region}-EbsCsiDriverRole" ;
-  fi
-}
-
 # Delete an eks based kubernetes cluster
 #   args:
-#     (1) cluster json configuration
+#     (1) aws profile
+#     (2) cluster json configuration
 #   example:
 #      {
 #        "kubeconfig": "output/active-kubeconfig.yaml",
@@ -136,7 +81,8 @@ function enable_ebs_csi_driver {
 #      }
 #
 function delete_eks_cluster {
-  [[ -z "${1}" ]] && print_error "Please provide cluster json configuration as 1st argument" && return 2 || local json_config="${1}" ;
+  [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide cluster json configuration as 1st argument" && return 2 || local json_config="${2}" ;
 
   local cluster_kubeconfig=$(echo ${json_config} | jq -r '.kubeconfig') ;
   local cluster_name=$(echo ${json_config} | jq -r '.name') ;
@@ -145,26 +91,9 @@ function delete_eks_cluster {
   echo "Delete cluster '${cluster_name}' in region '${cluster_region}'" ;
   eksctl delete cluster \
     --name "${cluster_name}" \
-    --profile "${AWS_PROFILE}" \
+    --profile "${aws_profile}" \
     --region "${cluster_region}" ;
   rm -f "${ROOT_DIR}/${cluster_kubeconfig}" ;
-}
-
-# Delete IAM Service Account of EBS CSI driver for persistent volume claims
-#   args:
-#     (1) cluster name
-#     (2) cluster region
-function delete_iamserviceaccount {
-  [[ -z "${1}" ]] && print_error "Please provide cluster name as 1st argument" && return 2 || local cluster_name="${1}" ;
-  [[ -z "${2}" ]] && print_error "Please provide cluster region as 2nd argument" && return 2 || local cluster_region="${2}" ;
-
-  echo "Delete iamserviceaccount 'ebs-csi-controller-sa' of cluster '${cluster_name}' in region '${cluster_region}'" ;
-  eksctl delete iamserviceaccount \
-    --cluster "${cluster_name}" \
-    --name "ebs-csi-controller-sa" \
-    --namespace "kube-system" \
-    --profile "${AWS_PROFILE}" \
-    --region "${cluster_region}" ;
 }
 
 
@@ -190,7 +119,7 @@ if [[ ${ACTION} = "up" ]]; then
 
   # Start eks clusters in parallel using eksctl in background task
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    start_eks_cluster "$(jq -r '.eks.clusters['${cluster_index}']' ${AWS_ENV_FILE})" &
+    start_eks_cluster "${AWS_PROFILE}" "${AWS_RESOURCE_PREFIX}" "$(jq -r '.eks.clusters['${cluster_index}']' ${AWS_ENV_FILE})" &
     eksctl_pids[${cluster_index}]=$! ;
   done
 
@@ -207,7 +136,7 @@ if [[ ${ACTION} = "up" ]]; then
     cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
     cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
     
-    enable_ebs_csi_driver "${cluster_name}" "${cluster_region}" ;
+    enable_ebs_csi_driver "${AWS_PROFILE}" "${cluster_name}" "${cluster_region}" ;
   done
 
   # Verifying if clusters are successfully running and reachable
@@ -225,14 +154,19 @@ if [[ ${ACTION} = "up" ]]; then
 
 
     if cluster_info_out=$(kubectl cluster-info --kubeconfig "${ROOT_DIR}/${cluster_kubeconfig}" 2>&1); then
-      print_info "Cluster '${cluster_name}' running correctly in region '${cluster_region}'" ;
-      print_info "Cluster '${cluster_name}' kubeconfig file: ${ROOT_DIR}/${cluster_kubeconfig}" ;
+      print_info "EKS cluster '${cluster_name}' running correctly in region '${cluster_region}'" ;
+      print_info "EKS cluster '${cluster_name}' kubeconfig file: ${ROOT_DIR}/${cluster_kubeconfig}" ;
     else
-      print_error "Cluster '${cluster_name}' is not running correctly in region '${cluster_region}'" ;
-      print_error "Cluster '${cluster_name}' kubeconfig file: ${ROOT_DIR}/${cluster_kubeconfig}" ;
+      print_error "EKS cluster '${cluster_name}' is not running correctly in region '${cluster_region}'" ;
+      print_error "EKS cluster '${cluster_name}' kubeconfig file: ${ROOT_DIR}/${cluster_kubeconfig}" ;
       print_error "${cluster_info_out}" ;
     fi
   done
+
+  # Sync tsb images to ECR repositories
+  repo_region=$(jq -r '.ecr.region' ${AWS_ENV_FILE}) ;
+  repo_tags=$(jq -r '.ecr.tags' ${AWS_ENV_FILE}) ;
+  sync_tsb_images_to_ecr "${AWS_PROFILE}" "${repo_region}" "${repo_tags}" ;
 
   exit 0 ;
 fi
@@ -246,12 +180,12 @@ if [[ ${ACTION} = "down" ]]; then
     cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
     cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
 
-    delete_iamserviceaccount "${cluster_name}" "${cluster_region}" ;
+    delete_iamserviceaccount "${AWS_PROFILE}" "${cluster_name}" "${cluster_region}" ;
   done
 
   # Delete eks clusters in parallel using eksctl in background task
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    delete_eks_cluster "$(jq -r '.eks.clusters['${cluster_index}']' ${AWS_ENV_FILE})" &
+    delete_eks_cluster "${AWS_PROFILE}" "$(jq -r '.eks.clusters['${cluster_index}']' ${AWS_ENV_FILE})" &
     eksctl_pids[${cluster_index}]=$! ;
   done
 
@@ -262,6 +196,11 @@ if [[ ${ACTION} = "down" ]]; then
     echo "Waiting for cluster '${cluster_name}' in region '${cluster_region}' to be deleted" ;
     wait ${eksctl_pids[${cluster_index}]} ;
   done
+
+
+  # Delete ECR repository
+  repo_region=$(jq -r '.ecr.region' ${AWS_ENV_FILE}) ;
+  delete_tsb_ecr_repos "${AWS_PROFILE}" "${repo_region}" ;
 
   exit 0 ;
 fi
@@ -274,13 +213,18 @@ if [[ ${ACTION} = "info" ]]; then
     cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
     cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
 
-    print_info "================================================== cluster ${cluster_name} ==================================================" ;
-    print_command "kubectl --kubeconfig ${cluster_kubeconfig} get cluster-info" ;
-    kubectl --kubeconfig ${cluster_kubeconfig} cluster-info ;
-    echo ;
-    print_command "kubectl --kubeconfig ${cluster_kubeconfig} get pods,svc -A" ;
-    kubectl --kubeconfig ${cluster_kubeconfig} get pods,svc -A ;
+    print_info "================================================== eks cluster ${cluster_name} ==================================================" ;
+    print_command "kubectl --kubeconfig ${cluster_kubeconfig} get pods,svc -A -o wide" ;
+    kubectl --kubeconfig ${cluster_kubeconfig} get pods,svc -A -o wide ;
+    echo
   done
+
+
+  repo_region=$(jq -r '.ecr.region' ${AWS_ENV_FILE}) ;
+  ecr_repository_url=$(get_ecr_repository_url "${AWS_PROFILE}" "${repo_region}") ;
+  print_info "================================================== ecr repository in region ${repo_region} ==================================================" ;
+  print_info "ECR Repository URL: ${ecr_repository_url}" ;
+  echo
 
   exit 0 ;
 fi

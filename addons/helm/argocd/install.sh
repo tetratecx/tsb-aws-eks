@@ -1,11 +1,6 @@
 # Helper functions to start, upgrade and remove argocd (a pull based gitops solution)
 #
 
-# Some colors
-END_COLOR="\033[0m"
-GREENB_COLOR="\033[1;32m"
-REDB_COLOR="\033[1;31m"
-
 # ArgoCD uses htpasswd style, which uses a hashed password
 # Use to regenerate: htpasswd -nbBC 10 "" argocd-admin | tr -d ':\n' | sed 's/$2y/$2a/' ; echo
 #
@@ -15,22 +10,6 @@ ARGOCD_ADMIN_PASSWORD='$2a$10$XRFNO/K5cHtptZl77vCOUO0/P4hMflV/wJaBmFtpTsjlwN0iQW
 ARGOCD_ADMIN_USER="admin"
 ARGOCD_HTTP_PORT=80
 ARGOCD_NAMESPACE="argocd"
-
-# Print info messages
-#   args:
-#     (1) message
-function print_info {
-  [[ -z "${1}" ]] && print_error "Please provide message as 1st argument" && return 2 || local message="${1}" ;
-  echo -e "${GREENB_COLOR}${message}${END_COLOR}" ;
-}
-
-# Print error messages
-#   args:
-#     (1) message
-function print_error {
-  [[ -z "${1}" ]] && print_error "Please provide message as 1st argument" && return 2 || local message="${1}" ;
-  echo -e "${REDB_COLOR}${message}${END_COLOR}" ;
-}
 
 # Deploy argocd server in kubernetes using helm
 #   args:
@@ -45,7 +24,7 @@ function argocd_deploy {
   [[ -z "${4}" ]] && local admin_password="${ARGOCD_ADMIN_PASSWORD}" || local admin_password="${4}" ;
 
   helm repo add argocd-charts https://argoproj.github.io/argo-helm ;
-  helm repo update ;
+  helm repo update argocd-charts ;
 
   if $(helm status argocd --kubeconfig "${kubeconfig}" --namespace "${namespace}" &>/dev/null); then
     helm upgrade argocd argocd-charts/argo-cd \
