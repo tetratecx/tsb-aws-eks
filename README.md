@@ -24,12 +24,21 @@ Run the make file to go through the setup process
 ```
 # make
 help                           This help
+up                             Bring up full demo scenario
+info                           Get demo setup information
+down                           Bring down full demo scenario
 prereq-check                   Check if prerequisites are installed
 prereq-install                 Install prerequisites
-awscli-login                   Login to AWS CLI
-eks-up                         Create k8s clusters using eksctl
-eks-down                       Delete k8s clusters using eksctl
-eks-info                       Get k8s clusters information
+aws-cli-login                  Login to AWS CLI
+aws-up                         Create eks clusters and ecr repository [eta 17min]
+aws-down                       Delete eks clusters and ecr repository [eta 11min]
+aws-info                       Get eks clusters and ecr repository information
+addons-deploy                  Deploy cluster addons (argcocd, gitea)
+addons-undeploy                Undeploy cluster addons (argcocd, gitea)
+addons-info                    Get cluster addons information (argcocd, gitea)
+tsb-install                    Install tsb mp and cp
+tsb-uninstall                  Uninstall tsb mp and cp
+tsb-info                       Get tsb information
 ```
 
 Before spinning up your EKS cluster on AWS, you will need to login into the AWS CLI using the awscli-login target.
