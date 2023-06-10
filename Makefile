@@ -31,7 +31,7 @@ aws-up: prereq-check aws-cli-login ## Create eks clusters and ecr repository [et
 	@/bin/sh -c './aws.sh up'
 
 .PHONY: aws-down
-aws-down: ## Delete eks clusters and ecr repository [eta 11min]
+aws-down: ## Delete eks clusters and ecr repository [eta 12min]
 	@/bin/sh -c './aws.sh down'
 
 .PHONY: aws-info

@@ -197,8 +197,7 @@ if [[ ${ACTION} = "down" ]]; then
     wait ${eksctl_pids[${cluster_index}]} ;
   done
 
-
-  # Delete ECR repository
+  # Delete TSB ECR image repositories
   repo_region=$(jq -r '.ecr.region' ${AWS_ENV_FILE}) ;
   delete_tsb_ecr_repos "${AWS_PROFILE}" "${repo_region}" ;
 

@@ -38,6 +38,7 @@ function delete_ecr_repository {
 
   echo "Delete ECR repository '${repo_name}' in region '${repo_region}'" ;
   aws ecr delete-repository \
+    --force \
     --repository-name "${repo_name}" \
     --region "${repo_region}" \
     --profile "${aws_profile}" ;
@@ -175,7 +176,6 @@ function sync_tsb_images_to_ecr {
 function delete_tsb_ecr_repos {
   [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide ecr repository region as 2nd argument" && return 2 || local repo_region="${2}" ;
-  [[ -z "${3}" ]] && print_error "Please provide ecr repository tags as 3rd argument" && return 2 || local repo_tags="${3}" ;
   echo "Going to delete tsb ecr repositories in region '${repo_region}'"
 
   # Delete all tsb ecr repositories
