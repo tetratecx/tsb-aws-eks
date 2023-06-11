@@ -861,26 +861,43 @@ function gitea_remove_org_team_from_repo {
 #     (1) local repository folder (each subfolder should match a repo name)
 #     (2) server url (with credentials)
 #     (3) repository name
-#     (4) repository owner (default 'gitea-admin')
-#     (5) temporary folder (default /tmp/gitea-repos)
+#     (4) envsubst list of variables=values (ECR_REPO_URL=1.2.3.4:5000,EXTRA=extra_value)
+#     (5) repository owner (default 'gitea-admin')
+#     (6) temporary folder (default /tmp/gitea-repos)
 function gitea_sync_code_to_repo {
   [[ -z "${1}" ]] && print_error "Please provide local folder as 1st argument" && return 2 || local local_folder="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide gitea server url as 2nd argument" && return 2 || local server_url="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide repository name as 3rd argument" && return 2 || local repo_name="${3}" ;
-  [[ -z "${4}" ]] && local repo_owner="${GITEA_ADMIN_USER}" || local repo_owner="${4}" ;
-  [[ -z "${5}" ]] && local temp_folder="/tmp/gitea-repos" || local temp_folder="${5}" ;
+  [[ -z "${4}" ]] && local envsubst_list="" || local envsubst_list="${4}" ;
+  [[ -z "${5}" ]] && local repo_owner="${GITEA_ADMIN_USER}" || local repo_owner="${5}" ;
+  [[ -z "${6}" ]] && local temp_folder="/tmp/gitea-repos" || local temp_folder="${6}" ;
 
-  print_info "Going to git clone repo '${repo_owner}/${repo_name}' to '${temp_folder}'"
-  mkdir -p ${temp_folder}
-  cd ${temp_folder}
-  rm -rf ${temp_folder}/${repo_name}
-  git clone ${server_url}/${repo_owner}/${repo_name}.git
+  start_folder=$(pwd) ;
+  print_info "Going to git clone repo '${repo_owner}/${repo_name}' to '${temp_folder}'" ;
+  mkdir -p ${temp_folder} ;
+  cd ${temp_folder} ;
+  rm -rf ${temp_folder}/${repo_name} ;
+  git clone ${server_url}/${repo_owner}/${repo_name}.git ;
 
-  print_info "Going remove, add, commit and push new code to repo '${repo_owner}/${repo_name}'"
-  cd ${temp_folder}/${repo_name}
-  rm -rf ${temp_folder}/${repo_name}/*
-  cp -a ${local_folder}/${repo_name}/. ${temp_folder}/${repo_name}
-  git add -A
-  git commit -m "This is an automated commit"
-  git push -u origin main
+  print_info "Going remove, add, commit and push new code to repo '${repo_owner}/${repo_name}'" ;
+  cd ${temp_folder}/${repo_name} ;
+  rm -rf ${temp_folder}/${repo_name}/* ;
+  cp -a ${local_folder}/${repo_name}/. ${temp_folder}/${repo_name} ;
+
+  # envsubst to replace environment variables (eg ecr docker repo)
+  if ! [[ -z "${envsubst_list}" ]] ; then
+    for envsubst_element in $(echo ${envsubst_list} | tr "," " ") ; do
+      eval export "${envsubst_element}" ;
+      for yaml_file in $(find . -type f -name "*.yaml") ; do
+        envsubst < ${yaml_file} > ${yaml_file}.envsubst ;
+        rm -f ${yaml_file} ;
+        mv ${yaml_file}.envsubst ${yaml_file} ;
+      done
+    done 
+  fi
+
+  git add -A ;
+  git commit -m "This is an automated commit" ;
+  git push -u origin main ;
+  cd ${start_folder} ;
 }

@@ -7,7 +7,6 @@ source ${ROOT_DIR}/addons/aws/ecr.sh ;
 AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
 HOST_ENV_FILE=${ROOT_DIR}/env_host.json ;
 
-# Environment settings parsing
 AWS_PROFILE=$(cat ${AWS_ENV_FILE} | jq -r ".profile") ;
 
 ACTION=${1} ;
@@ -63,7 +62,7 @@ function patch_jwt_token_expiration_mp {
 function patch_enable_gitop_cp {
   [[ -z "${1}" ]] && print_error "Please provide kubeconfig file as 1st argument" && return 2 || local kubeconfig_file="${1}" ;
 
-  local gitops_patch='{"spec":{"components":{"gitops":{"enabled":true,"reconcileInterval":"30s"}}}}' ;
+  local gitops_patch='{"spec":{"components":{"gitops":{"enabled":true,"reconcileInterval":"30s","webhookTimeout":"2m"}}}}' ;
   kubectl --kubeconfig ${kubeconfig_file} -n istio-system patch controlplanes controlplane --type merge --patch ${gitops_patch}
 }
 
@@ -119,8 +118,8 @@ function install_tsb_mp {
 
   # Enable gitops in the cp plane of the management cluster
   patch_enable_gitop_cp ${mp_cluster_kubeconfig} ;
-  print_command "tctl x gitops grant mgmt-cluster" ;
-  KUBECONFIG=${mp_cluster_kubeconfig} tctl x gitops grant mgmt-cluster ;
+  print_command "tctl x gitops grant ${mp_cluster_name}" ;
+  KUBECONFIG=${mp_cluster_kubeconfig}    ;
 
   # Demo mgmt plane secret extraction (need to connect application clusters to mgmt cluster)
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/self_managed/onboarding-clusters#using-tctl-to-generate-secrets (demo install)
@@ -184,7 +183,7 @@ function bootstrap_install_tsb_cp {
   local ecr_repository_url=$(get_ecr_repository_url "${AWS_PROFILE}" "${repo_region}") ;
   export TSB_API_ENDPOINT=$(kubectl --kubeconfig ${mp_cluster_kubeconfig} get svc -n tsb envoy --output jsonpath='{.status.loadBalancer.ingress[0].hostname}') ;
   export TSB_CLUSTER_NAME=${cp_cluster_name} ;
-  export TSB_INSTALL_REPO_URL=${ecr_repository_url} ;
+  export ECR_REPO_URL=${ecr_repository_url} ;
   envsubst < ${ROOT_DIR}/templates/controlplane-template.yaml > ${cp_output_dir}/controlplane.yaml ;
 
   # bootstrap cluster with self signed certificate that share a common root certificate
@@ -299,13 +298,14 @@ if [[ ${ACTION} = "info" ]]; then
       mp_cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
       mp_cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
       mp_cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
-      tsb_api_endpoint=$(kubectl --kubeconfig ${mp_cluster_kubeconfig} get svc -n tsb envoy --output jsonpath='{.status.loadBalancer.ingress[0].hostname}') ;
+      tsb_api_endpoint=$(kubectl --kubeconfig ${mp_cluster_kubeconfig} get svc -n tsb envoy \
+        --output jsonpath='{.status.loadBalancer.ingress[0].hostname}') ;
 
-      print_info "Management plane cluster ${mp_cluster_name} in region '${mp_cluster_region}':"
-      print_error "TSB GUI: https://${tsb_api_endpoint}:8443 (admin/admin)"
-      echo
-      print_command "kubectl --kubeconfig ${mp_cluster_kubeconfig} get pods -A"
-      echo
+      print_info "Management plane cluster ${mp_cluster_name} in region '${mp_cluster_region}':" ;
+      print_error "TSB GUI: https://${tsb_api_endpoint}:8443 (admin/admin)" ;
+      echo ;
+      print_command "kubectl --kubeconfig ${mp_cluster_kubeconfig} get pods -A" ;
+      echo ;
     fi
 
     if [[ "${cluster_tsb_type}" == "cp" ]]; then
@@ -313,9 +313,9 @@ if [[ ${ACTION} = "info" ]]; then
       cp_cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
       cp_cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
 
-      print_info "Control plane cluster ${cp_cluster_name} in region '${cp_cluster_region}':"
-      print_command "kubectl --kubeconfig ${cp_cluster_kubeconfig} get pods -A"
-      echo
+      print_info "Control plane cluster ${cp_cluster_name} in region '${cp_cluster_region}':" ;
+      print_command "kubectl --kubeconfig ${cp_cluster_kubeconfig} get pods -A" ;
+      echo ;
     fi
   done
 

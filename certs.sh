@@ -1,6 +1,8 @@
 # Helper functions for certificate generation.
 #
 
+CERT_DEFAULT_DOMAIN="demo.tetrate.io" ;
+
 # Generate a self signed root certificate
 #   args:
 #     (1) output folder
@@ -9,8 +11,8 @@ function generate_root_cert {
 
   mkdir -p ${output_folder} ;
   if [[ -f "${output_folder}/root-cert.pem" ]]; then
-    echo "File ${output_folder}/root-cert.pem already exists... skipping root certificate generation"
-    return
+    echo "File ${output_folder}/root-cert.pem already exists... skipping root certificate generation" ;
+    return ;
   fi
 
   openssl req -newkey rsa:4096 -sha512 -nodes \
@@ -22,7 +24,7 @@ function generate_root_cert {
     -in ${output_folder}/root-cert.csr \
     -extfile <(printf "subjectKeyIdentifier=hash\nbasicConstraints=critical,CA:true\nkeyUsage=critical,digitalSignature,nonRepudiation,keyEncipherment,keyCertSign") \
     -out ${output_folder}/root-cert.pem ;
-  print_info "New root certificate generated at ${output_folder}/root-cert.pem"
+  print_info "New root certificate generated at ${output_folder}/root-cert.pem" ;
 }
 
 # Generate an intermediate istio certificate signed by the self signed root certificate
@@ -49,18 +51,18 @@ function generate_istio_cert {
     -out ${output_folder}/${cluster_name}/ca-cert.pem ;
   cat ${output_folder}/${cluster_name}/ca-cert.pem ${output_folder}/root-cert.pem >> ${output_folder}/${cluster_name}/cert-chain.pem ;
   cp ${output_folder}/root-cert.pem ${output_folder}/${cluster_name}/root-cert.pem ;
-  print_info "New intermediate istio certificate generated at ${output_folder}/${cluster_name}/ca-cert.pem"
+  print_info "New intermediate istio certificate generated at ${output_folder}/${cluster_name}/ca-cert.pem" ;
 }
 
 # Generate a workload client certificate signed by the self signed root certificate
 #   args:
 #     (1) output folder
 #     (2) client workload name
-#     (3) domain name
+#     (3) domain name (optional, default 'demo.tetrate.io')
 function generate_client_cert {
   [[ -z "${1}" ]] && print_error "Please provide output folder as 1st argument" && return 2 || local output_folder="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide client workload name as 2nd argument" && return 2 || local client_name="${2}" ;
-  [[ -z "${3}" ]] && print_error "Please provide domain name as 3rd argument" && return 2 || local domain_name="${3}" ;
+  [[ -z "${3}" ]] && local domain_name="${CERT_DEFAULT_DOMAIN}" || local domain_name="${3}" ;
 
   if [[ ! -f "${output_folder}/root-cert.pem" ]]; then generate_root_cert ${output_folder}; fi
   if [[ -f "${output_folder}/${client_name}/client.${client_name}.${domain_name}-cert.pem" ]]; then echo "File ${output_folder}/${client_name}/client.${client_name}.${domain_name}-cert.pem already exists... skipping client certificate generation" ; return ; fi
@@ -77,18 +79,18 @@ function generate_client_cert {
     -out ${output_folder}/${client_name}/client.${client_name}.${domain_name}-cert.pem ;
   cat ${output_folder}/${client_name}/client.${client_name}.${domain_name}-cert.pem ${output_folder}/root-cert.pem >> ${output_folder}/${client_name}/client.${client_name}.${domain_name}-cert-chain.pem ;
   cp ${output_folder}/root-cert.pem ${output_folder}/${client_name}/root-cert.pem ;
-  print_info "New client certificate generated at ${output_folder}/${client_name}/client.${client_name}.${domain_name}-cert.pem"
+  print_info "New client certificate generated at ${output_folder}/${client_name}/client.${client_name}.${domain_name}-cert.pem" ;
 }
 
 # Generate a workload server certificate signed by the self signed root certificate
 #   args:
 #     (1) output folder
 #     (2) server workload name
-#     (3) domain name
+#     (3) domain name (optional, default 'demo.tetrate.io')
 function generate_server_cert {
   [[ -z "${1}" ]] && print_error "Please provide output folder as 1st argument" && return 2 || local output_folder="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide server workload name as 2nd argument" && return 2 || local server_name="${2}" ;
-  [[ -z "${3}" ]] && print_error "Please provide domain name as 3rd argument" && return 2 || local domain_name="${3}" ;
+  [[ -z "${3}" ]] && local domain_name="${CERT_DEFAULT_DOMAIN}" || local domain_name="${3}" ;
 
   if [[ ! -f "${output_folder}/root-cert.pem" ]]; then generate_root_cert ${output_folder}; fi
   if [[ -f "${output_folder}/${server_name}/server.${server_name}.${domain_name}-cert.pem" ]]; then echo "File ${output_folder}/${server_name}/server.${server_name}.${domain_name}-cert.pem already exists... skipping server certificate generation" ; return ; fi
@@ -106,8 +108,75 @@ function generate_server_cert {
     -out ${output_folder}/${server_name}/server.${server_name}.${domain_name}-cert.pem ;
   cat ${output_folder}/${server_name}/server.${server_name}.${domain_name}-cert.pem ${output_folder}/root-cert.pem >> ${output_folder}/${server_name}/server.${server_name}.${domain_name}-cert-chain.pem ;
   cp ${output_folder}/root-cert.pem ${output_folder}/${server_name}/root-cert.pem ;
-  print_info "New server certificate generated at ${output_folder}/${server_name}/server.${server_name}.${domain_name}-cert.pem"
+  print_info "New server certificate generated at ${output_folder}/${server_name}/server.${server_name}.${domain_name}-cert.pem" ;
 }
+
+# Generate kubernetes ingress secret for https
+#   args:
+#     (1) output file
+#     (2) secret name
+#     (3) server private key
+#     (4) server certificate
+#     (5) namespace (optional, default '')
+function generate_kubernetes_ingress_secret_https {
+  [[ -z "${1}" ]] && print_error "Please provide output file as 1st argument" && return 2 || local output_file="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide secret name as 2nd argument" && return 2 || local secret_name="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide server private key as 3rd argument" && return 2 || local server_key="${3}" ;
+  [[ -z "${4}" ]] && print_error "Please provide server certificate as 4th argument" && return 2 || local server_cert="${4}" ;
+  [[ -z "${5}" ]] && local namespace="" || local namespace="${5}" ;
+
+  if [[ -z "${namespace}" ]]; then
+    kubectl create secret tls ${secret_name} \
+      --cert=${server_cert} \
+      --key=${server_key} \
+      --dry-run=client \
+      --output=yaml > ${output_file} ;
+  else
+    kubectl create secret tls ${secret_name} \
+      --namespace=${namespace} \
+      --cert=${server_cert} \
+      --key=${server_key} \
+      --dry-run=client \
+      --output=yaml > ${output_file} ;
+  fi
+  print_info "Kubernetes https secret '${secret_name}' created at '${output_file}'"
+}
+
+# Generate kubernetes ingress secret for https
+#   args:
+#     (1) output file
+#     (2) secret name
+#     (3) server private key
+#     (4) server certificate
+#     (5) ca certificate
+#     (6) namespace (optional, default '')
+function generate_kubernetes_ingress_secret_mtls {
+  [[ -z "${1}" ]] && print_error "Please provide output file as 1st argument" && return 2 || local output_file="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide secret name as 2nd argument" && return 2 || local secret_name="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide server private key as 3rd argument" && return 2 || local server_key="${3}" ;
+  [[ -z "${4}" ]] && print_error "Please provide server certificate as 4th argument" && return 2 || local server_cert="${4}" ;
+  [[ -z "${5}" ]] && print_error "Please provide ca certificate as 5th argument" && return 2 || local ca_cert="${5}" ;
+  [[ -z "${6}" ]] && local namespace="" || local namespace="${6}" ;
+
+  if [[ -z "${namespace}" ]]; then
+    kubectl create secret generic ${secret_name} \
+      --from-file=tls.key=${server_key} \
+      --from-file=tls.crt=${server_cert} \
+      --from-file=ca.crt=${ca_cert} \
+      --dry-run=client \
+      --output=yaml > ${output_file} ;
+  else
+    kubectl create secret generic ${secret_name} \
+      --namespace=${namespace} \
+      --from-file=tls.key=${server_key} \
+      --from-file=tls.crt=${server_cert} \
+      --from-file=ca.crt=${ca_cert} \
+      --dry-run=client \
+      --output=yaml > ${output_file} ;
+  fi
+  print_info "Kubernetes mtls secret '${secret_name}' created at '${output_file}'"
+}
+
 
 ### Cert Generation Tests
 
@@ -117,3 +186,5 @@ function generate_server_cert {
 # generate_istio_cert standby-cluster ;
 # generate_client_cert vm-onboarding tetrate.prod ;
 # generate_server_cert vm-onboarding tetrate.prod ;
+
+

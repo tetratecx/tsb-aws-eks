@@ -6,7 +6,6 @@ source ${ROOT_DIR}/addons/aws/ecr.sh ;
 
 AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
 
-# Environment settings parsing
 AWS_PROFILE=$(cat ${AWS_ENV_FILE} | jq -r ".profile") ;
 AWS_RESOURCE_PREFIX=$(cat ${AWS_ENV_FILE} | jq -r ".resource_prefix") ;
 

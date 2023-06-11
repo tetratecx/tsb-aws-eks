@@ -33,7 +33,7 @@ spec:
           env:
             - name: SVCNAME
               value: app-a
-          image: 192.168.48.2:5000/obs-tester-server:1.0
+          image: $ECR_REPO_URL/obs-tester-server:1.0
           imagePullPolicy: IfNotPresent
           name: obs-tester
           ports:
@@ -81,7 +81,7 @@ spec:
           env:
             - name: SVCNAME
               value: app-b
-          image: 192.168.48.2:5000/obs-tester-server:1.0
+          image: $ECR_REPO_URL/obs-tester-server:1.0
           imagePullPolicy: IfNotPresent
           name: obs-tester
           ports:
@@ -129,7 +129,7 @@ spec:
           env:
             - name: SVCNAME
               value: app-c
-          image: 192.168.48.2:5000/obs-tester-server:1.0
+          image: $ECR_REPO_URL/obs-tester-server:1.0
           imagePullPolicy: IfNotPresent
           name: obs-tester
           ports:
