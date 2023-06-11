@@ -23,4 +23,4 @@ spec:
   workloadSelector:
     labels:
       app: gw-tier1-abc
-    namespace: gateway-abc
+    namespace: tier1-abc

@@ -12,7 +12,7 @@ spec:
   displayName: Tier1Gateway_ABC
   namespaceSelector:
     names:
-      - mgmt/gateway-abc
+      - "*/tier1-abc"
 ---
 apiVersion: gateway.tsb.tetrate.io/v2
 kind: Group
@@ -27,8 +27,7 @@ spec:
   displayName: IngressGateway_ABC
   namespaceSelector:
     names:
-      - active/gateway-abc
-      - standby/gateway-abc
+      - "*/gateway-abc"
 ---
 apiVersion: traffic.tsb.tetrate.io/v2
 kind: Group

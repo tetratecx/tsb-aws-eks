@@ -10,6 +10,7 @@ spec:
   displayName: WorkSpace_ABC
   namespaceSelector:
     names:
+      - '*/tier1-abc'
       - '*/gateway-abc'
       - '*/ns-a'
       - '*/ns-b'
