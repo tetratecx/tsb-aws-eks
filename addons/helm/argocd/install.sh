@@ -6,7 +6,8 @@
 #
 #   default: admin:$2a$10$XRFNO/K5cHtptZl77vCOUO0/P4hMflV/wJaBmFtpTsjlwN0iQW7B6
 #
-ARGOCD_ADMIN_PASSWORD='$2a$10$XRFNO/K5cHtptZl77vCOUO0/P4hMflV/wJaBmFtpTsjlwN0iQW7B6'
+ARGOCD_ADMIN_PASSWORD_HASHED='$2a$10$XRFNO/K5cHtptZl77vCOUO0/P4hMflV/wJaBmFtpTsjlwN0iQW7B6'
+ARGOCD_ADMIN_PASSWORD="argocd-admin"
 ARGOCD_ADMIN_USER="admin"
 ARGOCD_HTTP_PORT=80
 ARGOCD_NAMESPACE="argocd"
@@ -16,12 +17,12 @@ ARGOCD_NAMESPACE="argocd"
 #     (1) kubeconfig file
 #     (2) namespace (optional, default 'argocd')
 #     (3) admin user (optional, default 'admin')
-#     (4) admin password (optional, default 'argocd-admin')
+#     (4) admin password hashed (optional, default hashed 'argocd-admin')
 function argocd_deploy {
   [[ -z "${1}" ]] && print_error "Please provide kubeconfig file as 1st argument" && return 2 || local kubeconfig="${1}" ;
   [[ -z "${2}" ]] && local namespace="${ARGOCD_NAMESPACE}" || local namespace="${2}" ;
   [[ -z "${3}" ]] && local admin_user="${ARGOCD_ADMIN_USER}" || local admin_user="${3}" ;
-  [[ -z "${4}" ]] && local admin_password="${ARGOCD_ADMIN_PASSWORD}" || local admin_password="${4}" ;
+  [[ -z "${4}" ]] && local admin_password_hashed="${ARGOCD_ADMIN_PASSWORD_HASHED}" || local admin_password_hashed="${4}" ;
 
   helm repo add argocd-charts https://argoproj.github.io/argo-helm ;
   helm repo update argocd-charts ;
@@ -30,7 +31,7 @@ function argocd_deploy {
     helm upgrade argocd argocd-charts/argo-cd \
       --kubeconfig "${kubeconfig}" \
       --namespace "${namespace}" \
-      --set configs.secret.argocdServerAdminPassword="${admin_password}" \
+      --set configs.secret.argocdServerAdminPassword="${admin_password_hashed}" \
       --set configs.secret.argocdServerAdminPasswordMtime="2023-01-01T00:00:00Z" \
       --set server.service.type=LoadBalancer ;
     print_info "Upgraded helm chart for argocd" ;
@@ -39,7 +40,7 @@ function argocd_deploy {
       --create-namespace \
       --kubeconfig "${kubeconfig}" \
       --namespace "${namespace}" \
-      --set configs.secret.argocdServerAdminPassword="${admin_password}" \
+      --set configs.secret.argocdServerAdminPassword="${admin_password_hashed}" \
       --set configs.secret.argocdServerAdminPasswordMtime="2023-01-01T00:00:00Z" \
       --set server.service.type=LoadBalancer ;
     print_info "Installed helm chart for argocd" ;

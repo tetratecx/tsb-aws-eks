@@ -139,13 +139,13 @@ if [[ ${ACTION} = "info" ]]; then
     case ${cluster_tsb_type} in
       "mp")
         print_info "Addons in tsb mp cluster '${cluster_name}' in region '${cluster_region}'" ;
-        print_info " - ArgoCD:   $(argocd_get_http_url ${cluster_kubeconfig})" ;
-        print_info " - Gitea:    $(gitea_get_http_url ${cluster_kubeconfig})" ;
+        print_info " - ArgoCD:   $(argocd_get_http_url ${cluster_kubeconfig}) [${ARGOCD_ADMIN_USER}:${ARGOCD_ADMIN_PASSWORD}]" ;
+        print_info " - Gitea:    $(gitea_get_http_url ${cluster_kubeconfig}) [${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}]" ;
         echo ;
         ;;
       "cp")
         print_info "Addons in tsb cp cluster '${cluster_name}' in region '${cluster_region}'" ;
-        print_info " - ArgoCD:   $(argocd_get_http_url ${cluster_kubeconfig})" ;
+        print_info " - ArgoCD:   $(argocd_get_http_url ${cluster_kubeconfig}) [${ARGOCD_ADMIN_USER}:${ARGOCD_ADMIN_PASSWORD}]" ;
         echo ;
         ;;
       *)

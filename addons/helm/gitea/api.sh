@@ -2,13 +2,16 @@
 # API Docs at https://try.gitea.io/api/swagger#
 #
 
+GITEA_ADMIN_PASSWORD="gitea-admin"
+GITEA_ADMIN_USER="gitea-admin"
+
 # Get gitea version
 #   args:
 #     (1) api url
 #     (2) basic auth credentials (optional, default 'gitea-admin:gitea-admin')
 function gitea_get_version {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
-  [[ -z "${2}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${2}" ;
+  [[ -z "${2}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${2}" ;
 
   curl --fail --silent --request GET --user "${basic_auth}" \
     --header 'Content-Type: application/json' \
@@ -21,7 +24,7 @@ function gitea_get_version {
 #     (3) timeout in seconds (optional, default '120')
 function gitea_wait_api_ready {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
-  [[ -z "${2}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${2}" ;
+  [[ -z "${2}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${2}" ;
   [[ -z "${3}" ]] && local timeout="120" || local timeout="${3}" ;
 
   local count=0 ;
