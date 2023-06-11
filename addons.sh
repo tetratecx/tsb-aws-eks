@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
 source ${ROOT_DIR}/helpers.sh ;
-source ${ROOT_DIR}/addons/helm/argocd/install.sh ;
-source ${ROOT_DIR}/addons/helm/argocd/api.sh ;
-source ${ROOT_DIR}/addons/helm/gitea/install.sh ;
-source ${ROOT_DIR}/addons/helm/gitea/api.sh ;
+source ${ROOT_DIR}/addons/helm/argocd.sh ;
+source ${ROOT_DIR}/addons/helm/gitea.sh ;
 
 AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
 

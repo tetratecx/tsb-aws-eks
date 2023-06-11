@@ -57,6 +57,16 @@ function patch_jwt_token_expiration_mp {
   kubectl --kubeconfig ${kubeconfig_file} -n tsb patch managementplanes managementplane --type merge --patch ${token_patch}
 }
 
+# Patch GitOps enablement of control plane
+#   args:
+#     (1) kubeconfig file
+function patch_enable_gitop_cp {
+  [[ -z "${1}" ]] && print_error "Please provide kubeconfig file as 1st argument" && return 2 || local kubeconfig_file="${1}" ;
+
+  local gitops_patch='{"spec":{"components":{"gitops":{"enabled":true,"reconcileInterval":"30s"}}}}' ;
+  kubectl --kubeconfig ${kubeconfig_file} -n istio-system patch controlplanes controlplane --type merge --patch ${gitops_patch}
+}
+
 # Install tsb management plane cluster
 #   args:
 #     (1) mp kubeconfig file
@@ -106,6 +116,11 @@ function install_tsb_mp {
   patch_oap_refresh_rate_mp ${mp_cluster_kubeconfig} ;
   patch_oap_refresh_rate_cp ${mp_cluster_kubeconfig} ;
   patch_jwt_token_expiration_mp ${mp_cluster_kubeconfig} ;
+
+  # Enable gitops in the cp plane of the management cluster
+  patch_enable_gitop_cp ${mp_cluster_kubeconfig} ;
+  print_command "tctl x gitops grant mgmt-cluster" ;
+  KUBECONFIG=${mp_cluster_kubeconfig} tctl x gitops grant mgmt-cluster ;
 
   # Demo mgmt plane secret extraction (need to connect application clusters to mgmt cluster)
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/self_managed/onboarding-clusters#using-tctl-to-generate-secrets (demo install)

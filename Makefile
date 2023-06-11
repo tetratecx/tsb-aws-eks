@@ -61,3 +61,15 @@ tsb-uninstall: ## Uninstall tsb mp and cp
 .PHONY: tsb-info
 tsb-info: ## Get tsb information
 	@/bin/sh -c './tsb.sh info'
+
+.PHONY: scenario-deploy
+scenario-deploy: prereq-check ## Deploy demo scenarios
+	@/bin/sh -c './scenario.sh deploy'
+
+.PHONY: scenario-undeploy
+scenario-undeploy: ## Undeploy demo scenarios
+	@/bin/sh -c './scenario.sh undeploy'
+
+.PHONY: scenario-info
+scenario-info: ## Get scenarios information
+	@/bin/sh -c './scenario.sh info'

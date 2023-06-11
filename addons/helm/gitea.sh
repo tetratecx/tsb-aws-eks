@@ -4,6 +4,95 @@
 
 GITEA_ADMIN_PASSWORD="gitea-admin"
 GITEA_ADMIN_USER="gitea-admin"
+GITEA_HTTP_PORT=3000
+GITEA_NAMESPACE="gitea"
+
+# Deploy gitea server in kubernetes using helm
+#   args:
+#     (1) kubeconfig file
+#     (2) namespace (optional, default 'gitea')
+#     (3) admin user (optional, default 'gitea-admin')
+#     (4) admin password (optional, default 'gitea-admin')
+function gitea_deploy {
+  [[ -z "${1}" ]] && print_error "Please provide kubeconfig file as 1st argument" && return 2 || local kubeconfig="${1}" ;
+  [[ -z "${2}" ]] && local namespace="${GITEA_NAMESPACE}" || local namespace="${2}" ;
+  [[ -z "${3}" ]] && local admin_user="${GITEA_ADMIN_USER}" || local admin_user="${3}" ;
+  [[ -z "${4}" ]] && local admin_password="${GITEA_ADMIN_PASSWORD}" || local admin_password="${4}" ;
+
+  helm repo add gitea-charts https://dl.gitea.io/charts/ ;
+  helm repo update gitea-charts ;
+
+  if $(helm status gitea --kubeconfig "${kubeconfig}" --namespace "${namespace}" &>/dev/null); then
+    helm upgrade gitea gitea-charts/gitea \
+      --kubeconfig "${kubeconfig}" \
+      --namespace "${namespace}" \
+      --set gitea.admin.email=${admin_user}@local.domain \
+      --set gitea.admin.password=${admin_password} \
+      --set gitea.admin.username=${admin_user} \
+      --set service.http.type=LoadBalancer ;
+    print_info "Upgraded helm chart for gitea" ;
+  else
+    helm install gitea gitea-charts/gitea \
+      --create-namespace \
+      --kubeconfig "${kubeconfig}" \
+      --namespace "${namespace}" \
+      --set gitea.admin.email=${admin_user}@local.domain \
+      --set gitea.admin.password=${admin_password} \
+      --set gitea.admin.username=${admin_user} \
+      --set service.http.type=LoadBalancer ;
+    print_info "Installed helm chart for gitea" ;
+  fi
+}
+
+# Undeploy gitea from kubernetes using helm
+#   args:
+#     (1) kubeconfig file
+#     (2) namespace (optional, default 'gitea')
+function gitea_undeploy {
+  [[ -z "${1}" ]] && print_error "Please provide kubeconfig file as 1st argument" && return 2 || local kubeconfig="${1}" ;
+  [[ -z "${2}" ]] && local namespace="${GITEA_NAMESPACE}" || local namespace="${2}" ;
+
+  helm uninstall gitea \
+    --kubeconfig "${kubeconfig}" \
+    --namespace "${namespace}" ;
+  print_info "Uninstalled helm chart for gitea" ;
+}
+
+# Get gitea server http url
+#   args:
+#     (1) kubeconfig file
+#     (2) namespace (optional, default 'gitea')
+function gitea_get_http_url {
+  [[ -z "${1}" ]] && print_error "Please provide kubeconfig file as 1st argument" && return 2 || local kubeconfig="${1}" ;
+  [[ -z "${2}" ]] && local namespace="${GITEA_NAMESPACE}" || local namespace="${2}" ;
+
+  local gitea_hostname=$(kubectl get svc --kubeconfig "${kubeconfig}" --namespace "${namespace}" gitea-http -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null) ;
+  if [[ -z "${gitea_hostname}" ]]; then
+    print_error "Service 'gitea-http' in namespace '${namespace}' has no ip address or is not running" ; 
+    return 1 ;
+  fi
+  echo "http://${gitea_hostname}:${GITEA_HTTP_PORT}" ;
+}
+
+# Get gitea server http url with credentials
+#   args:
+#     (1) kubeconfig file
+#     (2) namespace (optional, default 'gitea')
+#     (3) admin user (optional, default 'gitea-admin')
+#     (4) admin password (optional, default 'gitea-admin')
+function gitea_get_http_url_with_credentials {
+  [[ -z "${1}" ]] && print_error "Please provide kubeconfig file as 1st argument" && return 2 || local kubeconfig="${1}" ;
+  [[ -z "${2}" ]] && local namespace="${GITEA_NAMESPACE}" || local namespace="${2}" ;
+  [[ -z "${3}" ]] && local admin_user="${GITEA_ADMIN_USER}" || local admin_user="${3}" ;
+  [[ -z "${4}" ]] && local admin_password="${GITEA_ADMIN_PASSWORD}" || local admin_password="${4}" ;
+
+  local gitea_hostname=$(kubectl get svc --kubeconfig "${kubeconfig}" --namespace "${namespace}" gitea-http -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null) ;
+  if [[ -z "${gitea_hostname}" ]]; then
+    print_error "Service 'gitea-http' in namespace '${namespace}' has no ip address or is not running" ; 
+    return 1 ;
+  fi
+  echo "http://${admin_user}:${admin_password}@${gitea_hostname}:${GITEA_HTTP_PORT}" ;
+}
 
 # Get gitea version
 #   args:
@@ -49,7 +138,7 @@ function gitea_has_repo_by_owner {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide repository name as 2nd argument" && return 2 || local repo_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide repository owner as 3th argument" && return 2 || local repo_owner="${3}" ;
-  [[ -z "${4}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${4}" ;
+  [[ -z "${4}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${4}" ;
 
   if result=$(curl --fail --silent --request GET --user "${basic_auth}" \
                 --header 'Content-Type: application/json' \
@@ -72,7 +161,7 @@ function gitea_create_repo_current_user {
   [[ -z "${2}" ]] && print_error "Please provide repository name as 2nd argument" && return 2 || local repo_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide repository description as 3th argument" && return 2 || local repo_description="${3}" ;
   [[ -z "${4}" ]] && local repo_private="false" || local repo_private="${4}" ;
-  [[ -z "${5}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${5}" ;
+  [[ -z "${5}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${5}" ;
 
   repo_owner=$(echo ${basic_auth} | cut -d ':' -f1)
   if $(gitea_has_repo_by_owner "${base_url}" "${repo_name}" "${repo_owner}" "${basic_auth}" &>/dev/null); then
@@ -100,7 +189,7 @@ function gitea_create_repo_in_org {
   [[ -z "${3}" ]] && print_error "Please provide repository name as 3th argument" && return 2 || local repo_name="${3}" ;
   [[ -z "${4}" ]] && print_error "Please provide repository description as 4th argument" && return 2 || local repo_description="${4}" ;
   [[ -z "${5}" ]] && local repo_private="false" || local repo_private="${5}" ;
-  [[ -z "${6}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${6}" ;
+  [[ -z "${6}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${6}" ;
 
   if $(gitea_has_repo_by_owner "${base_url}" "${repo_name}" "${org_name}" "${basic_auth}" &>/dev/null); then
     echo "Gitea repository '${repo_name}' in organization '${org_name}' already exists" ;
@@ -123,7 +212,7 @@ function gitea_delete_repo {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide repository owner as 3th argument" && return 2 || local repo_owner="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide repository name as 2nd argument" && return 2 || local repo_name="${3}" ;
-  [[ -z "${4}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${4}" ;
+  [[ -z "${4}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${4}" ;
 
   if $(gitea_has_repo_by_owner "${base_url}" "${repo_name}" "${repo_owner}" "${basic_auth}" &>/dev/null); then
     if result=$(curl --fail --silent --request DELETE --user "${basic_auth}" \
@@ -146,7 +235,7 @@ function gitea_delete_repo {
 #     (2) basic auth credentials (optional, default 'gitea-admin:gitea-admin')
 function gitea_get_repos_list {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
-  [[ -z "${2}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${2}" ;
+  [[ -z "${2}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${2}" ;
 
   curl --fail --silent --request GET --user "${basic_auth}" \
     --header 'Content-Type: application/json' \
@@ -159,7 +248,7 @@ function gitea_get_repos_list {
 #     (2) basic auth credentials (optional, default 'gitea-admin:gitea-admin')
 function gitea_get_repos_full_name_list {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
-  [[ -z "${2}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${2}" ;
+  [[ -z "${2}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${2}" ;
 
   curl --fail --silent --request GET --user "${basic_auth}" \
     --header 'Content-Type: application/json' \
@@ -177,7 +266,7 @@ function gitea_get_repos_full_name_list {
 function gitea_has_org {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide organization name as 2nd argument" && return 2 || local org_name="${2}" ;
-  [[ -z "${3}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${3}" ;
+  [[ -z "${3}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${3}" ;
 
   if result=$(curl --fail --silent --request GET --user "${basic_auth}" \
                 --header 'Content-Type: application/json' \
@@ -200,7 +289,7 @@ function gitea_create_org {
   [[ -z "${2}" ]] && print_error "Please provide organization name as 2nd argument" && return 2 || local org_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide organization description as 3th argument" && return 2 || local org_description="${3}" ;
   [[ -z "${4}" ]] && local org_visibility="public" || local org_visibility="${4}" ;
-  [[ -z "${5}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${5}" ;
+  [[ -z "${5}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${5}" ;
 
   if $(gitea_has_org "${base_url}" "${org_name}" "${basic_auth}" &>/dev/null); then
     echo "Gitea organization '${org_name}' already exists" ;
@@ -221,7 +310,7 @@ function gitea_create_org {
 function gitea_delete_org {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide organization name as 2nd argument" && return 2 || local org_name="${2}" ;
-  [[ -z "${3}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${3}" ;
+  [[ -z "${3}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${3}" ;
 
   if $(gitea_has_org "${base_url}" "${org_name}" "${basic_auth}" &>/dev/null); then
     if result=$(curl --fail --silent --request DELETE --user "${basic_auth}" \
@@ -244,7 +333,7 @@ function gitea_delete_org {
 #     (2) basic auth credentials (optional, default 'gitea-admin:gitea-admin')
 function gitea_get_org_list {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
-  [[ -z "${2}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${2}" ;
+  [[ -z "${2}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${2}" ;
 
   curl --fail --silent --request GET --user "${basic_auth}" \
     --header 'Content-Type: application/json' \
@@ -257,7 +346,7 @@ function gitea_get_org_list {
 #     (2) basic auth credentials (optional, default 'gitea-admin:gitea-admin')
 function gitea_delete_all_orgs {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
-  [[ -z "${2}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${2}" ;
+  [[ -z "${2}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${2}" ;
 
   for org in $(gitea_get_org_list "${base_url}" "${basic_auth}"); do
     gitea_delete_org "${base_url}" "${org}" "${basic_auth}" ;
@@ -270,7 +359,7 @@ function gitea_delete_all_orgs {
 #     (2) basic auth credentials (optional, default 'gitea-admin:gitea-admin')
 function gitea_delete_all_repos {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
-  [[ -z "${2}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${2}" ;
+  [[ -z "${2}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${2}" ;
 
   for repo_full_name in $(gitea_get_repos_full_name_list "${base_url}" "${basic_auth}"); do
     repo_owner=$(echo "${repo_full_name}" | cut -d '/' -f1) ;
@@ -290,7 +379,7 @@ function gitea_delete_all_repos {
 function gitea_has_user {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide username as 2nd argument" && return 2 || local username="${2}" ;
-  [[ -z "${3}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${3}" ;
+  [[ -z "${3}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${3}" ;
 
   if result=$(curl --fail --silent --request GET --user "${basic_auth}" \
                 --header 'Content-Type: application/json' \
@@ -313,7 +402,7 @@ function gitea_create_user {
   [[ -z "${2}" ]] && print_error "Please provide username as 2nd argument" && return 2 || local username="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide password as 3rd argument" && return 2 || local password="${3}" ;
   [[ -z "${4}" ]] && local email="${username}@gitea.local" || local email="${4}" ;
-  [[ -z "${5}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${5}" ;
+  [[ -z "${5}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${5}" ;
 
   if $(gitea_has_user "${base_url}" "${username}" "${basic_auth}" &>/dev/null); then
     echo "Gitea user '${username}' already exists" ;
@@ -334,7 +423,7 @@ function gitea_create_user {
 function gitea_delete_user {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide username as 2nd argument" && return 2 || local username="${2}" ;
-  [[ -z "${3}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${3}" ;
+  [[ -z "${3}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${3}" ;
 
   if $(gitea_has_user "${base_url}" "${username}" "${basic_auth}" &>/dev/null); then
     if result=$(curl --fail --silent --request DELETE --user "${basic_auth}" \
@@ -357,7 +446,7 @@ function gitea_delete_user {
 #     (2) basic auth credentials (optional, default 'gitea-admin:gitea-admin')
 function gitea_get_user_list {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
-  [[ -z "${2}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${2}" ;
+  [[ -z "${2}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${2}" ;
 
   curl --fail --silent --request GET --user "${basic_auth}" \
     --header 'Content-Type: application/json' \
@@ -370,7 +459,7 @@ function gitea_get_user_list {
 #     (2) basic auth credentials (optional, default 'gitea-admin:gitea-admin')
 function gitea_delete_all_users {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
-  [[ -z "${2}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${2}" ;
+  [[ -z "${2}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${2}" ;
 
   for user in $(gitea_get_user_list "${base_url}" "${basic_auth}"); do
     gitea_delete_user "${base_url}" "${user}" "${basic_auth}" ;
@@ -390,7 +479,7 @@ function gitea_has_org_team {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide organization name as 2nd argument" && return 2 || local org_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide team name as 3rd argument" && return 2 || local team_name="${3}" ;
-  [[ -z "${4}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${4}" ;
+  [[ -z "${4}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${4}" ;
 
   if result=$(curl --fail --silent --request GET --user "${basic_auth}" \
                 --header 'Content-Type: application/json' \
@@ -414,7 +503,7 @@ function gitea_create_org_team {
   [[ -z "${2}" ]] && print_error "Please provide organization name as 2nd argument" && return 2 || local org_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide team name as 3rd argument" && return 2 || local team_name="${3}" ;
   [[ -z "${4}" ]] && print_error "Please provide team description as 4th argument" && return 2 || local team_description="${4}" ;
-  [[ -z "${5}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${5}" ;
+  [[ -z "${5}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${5}" ;
 
   if $(gitea_has_org_team "${base_url}" "${org_name}" "${team_name}" "${basic_auth}" &>/dev/null); then
     echo "Gitea team '${team_name}' already exists in organization '${org_name}'" ;
@@ -437,7 +526,7 @@ function gitea_delete_org_team {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide organization name as 2nd argument" && return 2 || local org_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide team name as 3rd argument" && return 2 || local team_name="${3}" ;
-  [[ -z "${4}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${4}" ;
+  [[ -z "${4}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${4}" ;
 
   if ! $(gitea_has_org "${base_url}" "${org_name}" "${basic_auth}" &>/dev/null) ; then
     print_error "Gitea organization '${org_name}' does not exist" ;
@@ -468,7 +557,7 @@ function gitea_delete_org_team {
 function gitea_get_org_team_list {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide organization name as 2nd argument" && return 2 || local org_name="${2}" ;
-  [[ -z "${3}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${3}" ;
+  [[ -z "${3}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${3}" ;
 
   curl --fail --silent --request GET --user "${basic_auth}" \
     --header 'Content-Type: application/json' \
@@ -483,7 +572,7 @@ function gitea_get_org_team_list {
 function gitea_delete_all_org_teams {
   [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide organization name as 2nd argument" && return 2 || local org_name="${2}" ;
-  [[ -z "${3}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${3}" ;
+  [[ -z "${3}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${3}" ;
 
   for team in $(gitea_get_org_team_list "${base_url}" "${org_name}" "${basic_auth}"); do
     gitea_delete_org_team "${base_url}" "${org_name}" "${team}" "${basic_auth}" ;
@@ -502,7 +591,7 @@ function gitea_add_user_to_org_team {
   [[ -z "${2}" ]] && print_error "Please provide organization name as 2nd argument" && return 2 || local org_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide team name as 3rd argument" && return 2 || local team_name="${3}" ;
   [[ -z "${4}" ]] && print_error "Please provide username as 4th argument" && return 2 || local username="${4}" ;
-  [[ -z "${5}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${5}" ;
+  [[ -z "${5}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${5}" ;
 
   if ! $(gitea_has_org "${base_url}" "${org_name}" "${basic_auth}" &>/dev/null) ; then
     print_error "Gitea organization '${org_name}' does not exist" ;
@@ -539,7 +628,7 @@ function gitea_remove_user_from_org_team {
   [[ -z "${2}" ]] && print_error "Please provide organization name as 2nd argument" && return 2 || local org_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide team name as 3rd argument" && return 2 || local team_name="${3}" ;
   [[ -z "${4}" ]] && print_error "Please provide username as 4th argument" && return 2 || local username="${4}" ;
-  [[ -z "${5}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${5}" ;
+  [[ -z "${5}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${5}" ;
 
   if ! $(gitea_has_org "${base_url}" "${org_name}" "${basic_auth}" &>/dev/null) ; then
     print_error "Gitea organization '${org_name}' does not exist" ;
@@ -576,7 +665,7 @@ function gitea_add_repo_to_org_team {
   [[ -z "${2}" ]] && print_error "Please provide organization name as 2nd argument" && return 2 || local org_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide team name as 3rd argument" && return 2 || local team_name="${3}" ;
   [[ -z "${4}" ]] && print_error "Please provide repository name as 4th argument" && return 2 || local repo_name="${4}" ;
-  [[ -z "${5}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${5}" ;
+  [[ -z "${5}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${5}" ;
   
   if ! $(gitea_has_org "${base_url}" "${org_name}" "${basic_auth}" &>/dev/null) ; then
     print_error "Gitea organization '${org_name}' does not exist" ;
@@ -613,7 +702,7 @@ function gitea_remove_repo_from_org_team {
   [[ -z "${2}" ]] && print_error "Please provide organization name as 2nd argument" && return 2 || local org_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide team name as 3rd argument" && return 2 || local team_name="${3}" ;
   [[ -z "${4}" ]] && print_error "Please provide repository name as 4th argument" && return 2 || local repo_name="${4}" ;
-  [[ -z "${5}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${5}" ;
+  [[ -z "${5}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${5}" ;
   
   if ! $(gitea_has_org "${base_url}" "${org_name}" "${basic_auth}" &>/dev/null) ; then
     print_error "Gitea organization '${org_name}' does not exist" ;
@@ -650,7 +739,7 @@ function gitea_add_collaborator_to_repo {
   [[ -z "${2}" ]] && print_error "Please provide repo name as 2nd argument" && return 2 || local repo_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide repo owner as 3th argument" && return 2 || local repo_owner="${3}" ;
   [[ -z "${4}" ]] && print_error "Please provide username as 4th argument" && return 2 || local username="${4}" ;
-  [[ -z "${5}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${5}" ;
+  [[ -z "${5}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${5}" ;
   
   if ! $(gitea_has_repo_by_owner "${base_url}" "${repo_name}" "${repo_owner}" "${basic_auth}" &>/dev/null); then
     print_error "Gitea repository '${repo_name}' with owner '${repo_owner}' does not exist" ;
@@ -683,7 +772,7 @@ function gitea_remove_collaborator_from_repo {
   [[ -z "${2}" ]] && print_error "Please provide repo name as 2nd argument" && return 2 || local repo_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide repo owner as 3th argument" && return 2 || local repo_owner="${3}" ;
   [[ -z "${4}" ]] && print_error "Please provide username as 4th argument" && return 2 || local username="${4}" ;
-  [[ -z "${5}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${5}" ;
+  [[ -z "${5}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${5}" ;
   
   if ! $(gitea_has_repo_by_owner "${base_url}" "${repo_name}" "${repo_owner}" "${basic_auth}" &>/dev/null); then
     print_error "Gitea repository '${repo_name}' with owner '${repo_owner}' does not exist" ;
@@ -715,7 +804,7 @@ function gitea_add_org_team_to_repo {
   [[ -z "${2}" ]] && print_error "Please provide repo name as 2nd argument" && return 2 || local repo_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide organization name as 3th argument" && return 2 || local org_name="${3}" ;
   [[ -z "${4}" ]] && print_error "Please provide team name as 4th argument" && return 2 || local team_name="${4}" ;
-  [[ -z "${5}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${5}" ;
+  [[ -z "${5}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${5}" ;
   
   if ! $(gitea_has_repo_by_owner "${base_url}" "${repo_name}" "${org_name}" "${basic_auth}" &>/dev/null); then
     print_error "Gitea repository '${repo_name}' in organization '${org_name}' does not exist" ;
@@ -747,7 +836,7 @@ function gitea_remove_org_team_from_repo {
   [[ -z "${2}" ]] && print_error "Please provide repo name as 2nd argument" && return 2 || local repo_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide organization name as 4th argument" && return 2 || local org_name="${3}" ;
   [[ -z "${4}" ]] && print_error "Please provide team name as 5th argument" && return 2 || local team_name="${4}" ;
-  [[ -z "${5}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${5}" ;
+  [[ -z "${5}" ]] && local basic_auth="${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" || local basic_auth="${5}" ;
   
   if ! $(gitea_has_repo_by_owner "${base_url}" "${repo_name}" "${org_name}" "${basic_auth}" &>/dev/null); then
     print_error "Gitea repository '${repo_name}' in organization '${org_name}' does not exist" ;
@@ -767,117 +856,31 @@ function gitea_remove_org_team_from_repo {
   fi
 }
 
-# Create gitea configuration objets from a json file
+# Synchronize (git pull, add, commit and push) local code to a gitea repo
 #   args:
-#     (1) api url
-#     (2) configuration file
-#     (2) basic auth credentials (optional, default 'gitea-admin:gitea-admin')
-function gitea_create_from_json_file {
-  [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
-  [[ -z "${2}" ]] && print_error "Please provide config file as 1st argument" && return 2 || local config_file="${2}" ;
-  [[ ! -f "${2}" ]] && print_error "Config file does not exist" && return 2 || local config_file="${2}" ;
-  [[ -z "${3}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${3}" ;
+#     (1) local repository folder (each subfolder should match a repo name)
+#     (2) server url (with credentials)
+#     (3) repository name
+#     (4) repository owner (default 'gitea-admin')
+#     (5) temporary folder (default /tmp/gitea-repos)
+function gitea_sync_code_to_repo {
+  [[ -z "${1}" ]] && print_error "Please provide local folder as 1st argument" && return 2 || local local_folder="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide gitea server url as 2nd argument" && return 2 || local server_url="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide repository name as 3rd argument" && return 2 || local repo_name="${3}" ;
+  [[ -z "${4}" ]] && local repo_owner="${GITEA_ADMIN_USER}" || local repo_owner="${4}" ;
+  [[ -z "${5}" ]] && local temp_folder="/tmp/gitea-repos" || local temp_folder="${5}" ;
 
-  user_count=$(jq '.users | length' ${config_file}) ;
-  for ((user_index=0; user_index<${user_count}; user_index++)); do
-    user_name=$(jq -r '.users['${user_index}'].name' ${config_file}) ;
-    user_password=$(jq -r '.users['${user_index}'].password' ${config_file}) ;
-    print_info "Going to create user with username '${user_name}' and password '${user_password}'" ;
-    gitea_create_user "${base_url}" "${user_name}" "${user_password}" "${user_name}@gitea.local" "${basic_auth}" ;
-  done
+  print_info "Going to git clone repo '${repo_owner}/${repo_name}' to '${temp_folder}'"
+  mkdir -p ${temp_folder}
+  cd ${temp_folder}
+  rm -rf ${temp_folder}/${repo_name}
+  git clone ${server_url}/${repo_owner}/${repo_name}.git
 
-  org_count=$(jq '.organizations | length' ${config_file})
-  for ((org_index=0; org_index<${org_count}; org_index++)); do
-    org_description=$(jq -r '.organizations['${org_index}'].description' ${config_file}) ;
-    org_name=$(jq -r '.organizations['${org_index}'].name' ${config_file}) ;
-    print_info "Going to create organization with name '${org_name}' and description '${org_description}'" ;
-    gitea_create_org "${base_url}" "${org_name}" "${org_description}" "${basic_auth}" ;
-
-    org_repo_count=$(jq '.organizations['${org_index}'].repositories | length' ${config_file}) ;
-    for ((org_repo_index=0; org_repo_index<${org_repo_count}; org_repo_index++)); do
-      org_repo_description=$(jq -r '.organizations['${org_index}'].repositories['${org_repo_index}'].description' ${config_file}) ;
-      org_repo_name=$(jq -r '.organizations['${org_index}'].repositories['${org_repo_index}'].name' ${config_file}) ;
-      print_info "Going to create repository with name '${org_repo_name}' and description '${org_repo_description}' in organization '${org_name}'" ;
-      gitea_create_repo_in_org "${base_url}" "${org_name}" "${org_repo_name}" "${org_repo_description}" "${basic_auth}" ;
-    done
-
-    team_count=$(jq '.organizations['${org_index}'].teams | length' ${config_file}) ;
-    for ((team_index=0; team_index<${team_count}; team_index++)); do
-      team_description=$(jq -r '.organizations['${org_index}'].teams['${team_index}'].description' ${config_file}) ;
-      team_name=$(jq -r '.organizations['${org_index}'].teams['${team_index}'].name' ${config_file}) ;
-      print_info "Going to create organization team with name '${team_name}' and description '${team_description}'" ;
-      gitea_create_org_team "${base_url}" "${org_name}" "${team_name}" "${team_description}" "${basic_auth}" ;
-
-      team_member_count=$(jq '.organizations['${org_index}'].teams['${team_index}'].members | length' ${config_file}) ;
-      for ((team_member_index=0; team_member_index<${team_member_count}; team_member_index++)); do
-        team_member_name=$(jq -r '.organizations['${org_index}'].teams['${team_index}'].members['${team_member_index}']' ${config_file}) ;
-        print_info "Going to add user '${team_member_name}' as member to team '${team_name}' in organization '${org_name}'" ;
-        gitea_add_user_to_org_team "${base_url}" "${org_name}" "${team_name}" "${team_member_name}" "${basic_auth}" ;
-      done
-
-      team_repo_count=$(jq '.organizations['${org_index}'].teams['${team_index}'].repositories | length' ${config_file}) ;
-      for ((team_repo_index=0; team_repo_index<${team_repo_count}; team_repo_index++)); do
-        team_repo_name=$(jq -r '.organizations['${org_index}'].teams['${team_index}'].repositories['${team_repo_index}']' ${config_file}) ;
-        print_info "Going to add repository '${team_repo_name}' from organization '${org_name}' to team '${team_name}' in organization '${org_name}'" ;
-        gitea_add_repo_to_org_team "${base_url}" "${org_name}" "${team_name}" "${team_repo_name}" "${basic_auth}" ;
-      done
-    done
-  done
-}
-
-
-# Delete gitea configuration objets from a json file
-#   args:
-#     (1) api url
-#     (2) configuration file
-#     (2) basic auth credentials (optional, default 'gitea-admin:gitea-admin')
-function gitea_delete_from_json_file {
-  [[ -z "${1}" ]] && print_error "Please provide api url as 1st argument" && return 2 || local base_url="${1}" ;
-  [[ -z "${2}" ]] && print_error "Please provide config file as 1st argument" && return 2 || local config_file="${2}" ;
-  [[ ! -f "${2}" ]] && print_error "Config file does not exist" && return 2 || local config_file="${2}" ;
-  [[ -z "${3}" ]] && local basic_auth="gitea-admin:gitea-admin" || local basic_auth="${3}" ;
-
-  org_count=$(jq '.organizations | length' ${config_file})
-  for ((org_index=0; org_index<${org_count}; org_index++)); do
-    org_name=$(jq -r '.organizations['${org_index}'].name' ${config_file}) ;
-
-    team_count=$(jq '.organizations['${org_index}'].teams | length' ${config_file}) ;
-    for ((team_index=0; team_index<${team_count}; team_index++)); do
-      team_name=$(jq -r '.organizations['${org_index}'].teams['${team_index}'].name' ${config_file}) ;
-
-      team_member_count=$(jq '.organizations['${org_index}'].teams['${team_index}'].members | length' ${config_file}) ;
-      for ((team_member_index=0; team_member_index<${team_member_count}; team_member_index++)); do
-        team_member_name=$(jq -r '.organizations['${org_index}'].teams['${team_index}'].members['${team_member_index}']' ${config_file}) ;
-        print_info "Going to remove user '${team_member_name}' as member to team '${team_name}' in organization '${org_name}'" ;
-        gitea_remove_user_from_org_team "${base_url}" "${org_name}" "${team_name}" "${team_member_name}" "${basic_auth}" ;
-      done
-
-      team_repo_count=$(jq '.organizations['${org_index}'].teams['${team_index}'].repositories | length' ${config_file}) ;
-      for ((team_repo_index=0; team_repo_index<${team_repo_count}; team_repo_index++)); do
-        team_repo_name=$(jq -r '.organizations['${org_index}'].teams['${team_index}'].repositories['${team_repo_index}']' ${config_file}) ;
-        print_info "Going to remove repository '${team_repo_name}' from organization '${org_name}' to team '${team_name}' in organization '${org_name}'" ;
-        gitea_remove_repo_from_org_team "${base_url}" "${org_name}" "${team_name}" "${team_repo_name}" "${basic_auth}" ;
-      done
-
-      print_info "Going to delete organization team with name '${team_name}'" ;
-      gitea_delete_org_team "${base_url}" "${org_name}" "${team_name}" "${basic_auth}" ;
-    done
-
-    org_repo_count=$(jq '.organizations['${org_index}'].repositories | length' ${config_file}) ;
-    for ((org_repo_index=0; org_repo_index<${org_repo_count}; org_repo_index++)); do
-      org_repo_name=$(jq -r '.organizations['${org_index}'].repositories['${org_repo_index}'].name' ${config_file}) ;
-      print_info "Going to delete repository with name '${org_repo_name}' in organization '${org_name}'" ;
-      gitea_delete_repo "${base_url}" "${org_name}" "${org_repo_name}" "${basic_auth}" ;
-    done
-
-    print_info "Going to delete organization with name '${org_name}'" ;
-    gitea_delete_org "${base_url}" "${org_name}" "${basic_auth}" ;
-  done
-
-  user_count=$(jq '.users | length' ${config_file}) ;
-  for ((user_index=0; user_index<${user_count}; user_index++)); do
-    user_name=$(jq -r '.users['${user_index}'].name' ${config_file}) ;
-    print_info "Going to delete user with username '${user_name}'" ;
-    gitea_delete_user "${base_url}" "${user_name}" "${basic_auth}" ;
-  done
+  print_info "Going remove, add, commit and push new code to repo '${repo_owner}/${repo_name}'"
+  cd ${temp_folder}/${repo_name}
+  rm -rf ${temp_folder}/${repo_name}/*
+  cp -a ${local_folder}/${repo_name}/. ${temp_folder}/${repo_name}
+  git add -A
+  git commit -m "This is an automated commit"
+  git push -u origin main
 }
