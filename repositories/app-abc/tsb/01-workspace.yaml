@@ -1,0 +1,16 @@
+---
+apiVersion: tsb.tetrate.io/v2
+kind: Workspace
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+  name: abc
+spec:
+  displayName: WorkSpace_ABC
+  namespaceSelector:
+    names:
+      - '*/gateway-abc'
+      - '*/ns-a'
+      - '*/ns-b'
+      - '*/ns-c'

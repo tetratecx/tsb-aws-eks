@@ -1,0 +1,10 @@
+[
+  {
+    "description": "Deployment of Application ABC",
+    "name": "app-abc"
+  },
+  {
+    "description": "TSB Administration",
+    "name": "tsb-admin"
+  }
+]

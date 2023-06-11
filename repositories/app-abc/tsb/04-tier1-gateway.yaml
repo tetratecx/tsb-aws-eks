@@ -1,0 +1,26 @@
+---
+apiVersion: gateway.tsb.tetrate.io/v2
+kind: Tier1Gateway
+metadata:
+  annotations:
+    tsb.tetrate.io/gatewayGroup: tier1-gateway-abc
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: abc
+  name: tier1-abc
+spec:
+  displayName: Tier1GW_ABC
+  externalServers:
+    - clusters:
+        - name: active
+        - name: standby
+      hostname: abc.demo.tetrate.io
+      name: abc-https
+      port: 443
+      tls:
+        mode: SIMPLE
+        secretName: app-abc-cert
+  workloadSelector:
+    labels:
+      app: gw-tier1-abc
+    namespace: gateway-abc

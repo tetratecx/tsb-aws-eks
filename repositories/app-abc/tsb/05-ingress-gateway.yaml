@@ -1,0 +1,25 @@
+---
+apiVersion: gateway.tsb.tetrate.io/v2
+kind: IngressGateway
+metadata:
+  annotations:
+    tsb.tetrate.io/gatewayGroup: ingress-gateway-abc
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: abc
+  name: ingress-abc
+spec:
+  displayName: IngressGW_ABC
+  http:
+    - hostname: abc.demo.tetrate.io
+      name: abc
+      port: 443
+      routing:
+        rules:
+          - route:
+              host: ns-a/app-a.ns-a.svc.cluster.local
+              port: 80
+  workloadSelector:
+    labels:
+      app: gw-ingress-abc
+    namespace: gateway-abc

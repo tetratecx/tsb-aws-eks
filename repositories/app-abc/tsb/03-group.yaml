@@ -1,0 +1,137 @@
+---
+apiVersion: gateway.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: abc
+  name: tier1-gateway-abc
+spec:
+  configMode: BRIDGED
+  displayName: Tier1Gateway_ABC
+  namespaceSelector:
+    names:
+      - mgmt/gateway-abc
+---
+apiVersion: gateway.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: abc
+  name: ingress-gateway-abc
+spec:
+  configMode: BRIDGED
+  displayName: IngressGateway_ABC
+  namespaceSelector:
+    names:
+      - active/gateway-abc
+      - standby/gateway-abc
+---
+apiVersion: traffic.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: abc
+  name: traffic-a
+spec:
+  configMode: BRIDGED
+  displayName: Traffic_AppA
+  namespaceSelector:
+    names:
+      - '*/ns-a'
+---
+apiVersion: traffic.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: abc
+  name: traffic-b
+spec:
+  configMode: BRIDGED
+  displayName: Traffic_AppB
+  namespaceSelector:
+    names:
+      - '*/ns-b'
+---
+apiVersion: traffic.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: abc
+  name: traffic-c
+spec:
+  configMode: BRIDGED
+  displayName: Traffic_AppC
+  namespaceSelector:
+    names:
+      - '*/ns-c'
+---
+apiVersion: security.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: abc
+  name: security-ingress-abc
+spec:
+  configMode: BRIDGED
+  displayName: Security_IngressABC
+  namespaceSelector:
+    names:
+      - active/gateway-abc
+      - standby/gateway-abc
+---
+apiVersion: security.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: abc
+  name: security-a
+spec:
+  configMode: BRIDGED
+  displayName: Security_AppA
+  namespaceSelector:
+    names:
+      - '*/ns-a'
+---
+apiVersion: security.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: abc
+  name: security-b
+spec:
+  configMode: BRIDGED
+  displayName: Security_AppB
+  namespaceSelector:
+    names:
+      - '*/ns-b'
+---
+apiVersion: security.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: abc
+  name: security-c
+spec:
+  configMode: BRIDGED
+  displayName: Security_AppC
+  namespaceSelector:
+    names:
+      - '*/ns-c'

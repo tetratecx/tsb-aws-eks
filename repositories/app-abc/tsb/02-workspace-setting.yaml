@@ -1,0 +1,25 @@
+---
+apiVersion: tsb.tetrate.io/v2
+kind: WorkspaceSetting
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: abc
+  name: abc-setting
+spec:
+  defaultEastWestGatewaySettings:
+    - exposedServices:
+        - serviceLabels:
+            app: app-a
+            service: app-a
+        - serviceLabels:
+            app: app-b
+            service: app-b
+        - serviceLabels:
+            app: app-c
+            service: app-c
+      workloadSelector:
+        labels:
+          app: gw-eastwest-abc
+        namespace: gateway-abc
