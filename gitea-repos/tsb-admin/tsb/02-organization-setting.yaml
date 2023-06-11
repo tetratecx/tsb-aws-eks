@@ -5,4 +5,7 @@ metadata:
   annotations:
     tsb.tetrate.io/organization: tetrate
   name: tetrate-settings
-spec: {}
+spec:
+  networkSettings:
+    networkReachability:
+      tier1: tier2
