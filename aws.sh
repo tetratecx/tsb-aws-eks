@@ -109,7 +109,7 @@ function delete_all_lb_services {
     kubectl --kubeconfig ${kubeconfig_file} get deployments -n ${namespace} -o custom-columns=:metadata.name \
       | grep operator | xargs -I {} kubectl --kubeconfig ${kubeconfig_file} delete deployment {} -n ${namespace} --timeout=10s --wait=false ;
     sleep 1 ;
-   done 
+  done
 
   # Delete all service of type loadbalancer
   kubectl --kubeconfig ${kubeconfig_file} get svc -A \

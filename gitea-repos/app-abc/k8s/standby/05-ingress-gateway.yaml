@@ -5,6 +5,4 @@ metadata:
   name: gw-ingress-abc
   namespace: gateway-abc
 spec:
-  kubeSpec:
-    service:
-      type: LoadBalancer
+  eastWestOnly: false

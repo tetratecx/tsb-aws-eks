@@ -27,7 +27,8 @@ spec:
   displayName: IngressGateway_ABC
   namespaceSelector:
     names:
-      - "*/gateway-abc"
+      - "active/gateway-abc"
+      - "standby/gateway-abc"
 ---
 apiVersion: traffic.tsb.tetrate.io/v2
 kind: Group

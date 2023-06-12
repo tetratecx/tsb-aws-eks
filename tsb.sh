@@ -2,6 +2,7 @@
 ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
 source ${ROOT_DIR}/helpers.sh ;
 source ${ROOT_DIR}/addons/aws/ecr.sh ;
+source ${ROOT_DIR}/addons/helm/tsb.sh ;
 
 AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
 HOST_ENV_FILE=${ROOT_DIR}/env_host.json ;
@@ -97,6 +98,10 @@ function install_tsb_mp {
   local repo_region=$(jq -r '.ecr.region' ${AWS_ENV_FILE}) ;
   local ecr_repository_url=$(get_ecr_repository_url "${AWS_PROFILE}" "${repo_region}") ;
   print_command "KUBECONFIG=${mp_cluster_kubeconfig} tctl install demo --cluster ${mp_cluster_name} --registry ${ecr_repository_url} --admin-password admin"
+  KUBECONFIG=${mp_cluster_kubeconfig} tctl install demo --cluster ${mp_cluster_name} --registry ${ecr_repository_url} --admin-password admin ;
+
+  # We do this a second time, because aws loadbalancer status causes consistent failure the first time
+  #   Error: unable to connect to TSB at xyz:8443: time out trying to connection to TSB at xyz:8443
   KUBECONFIG=${mp_cluster_kubeconfig} tctl install demo --cluster ${mp_cluster_name} --registry ${ecr_repository_url} --admin-password admin ;
 
   # Wait for the management, control and data plane to become available
@@ -253,7 +258,7 @@ function bootstrap_install_tsb_cp {
 
   # bootstrap cluster with self signed certificate that share a common root certificate
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/self_managed/onboarding-clusters#intermediate-istio-ca-certificates
-  local certs_base_dir="${ROOT_DIR}/output/certs" ;
+  local certs_base_dir="${ROOT_DIR}/certs" ;
   if ! kubectl --kubeconfig ${cp_cluster_kubeconfig} get ns istio-system &>/dev/null; then
     kubectl --kubeconfig ${cp_cluster_kubeconfig} create ns istio-system ; 
   fi
@@ -376,6 +381,8 @@ function uninstall_tsb_cp {
 
 if [[ ${ACTION} = "install" ]]; then
 
+  # certs_base_dir="${ROOT_DIR}/certs/tsb" ;
+
   # First start and finish mp cluster installation
   cluster_count=$(jq '.eks.clusters | length' ${AWS_ENV_FILE}) ;
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
@@ -385,6 +392,8 @@ if [[ ${ACTION} = "install" ]]; then
       mp_cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
       mp_cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
       install_tsb_mp "${mp_cluster_kubeconfig}" "${mp_cluster_name}" "${mp_cluster_region}" ;
+
+      # WIP helm: tsb_mp_deploy
     fi
   done
 

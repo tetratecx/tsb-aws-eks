@@ -7,7 +7,7 @@ metadata:
   name: mgmt
 spec:
   locality:
-    region: region1
+    region: eu-west-1
   network: tier1
   tier1Cluster: true
   tokenTtl: 31536000s
@@ -20,7 +20,7 @@ metadata:
   name: active
 spec:
   locality:
-    region: region1
+    region: eu-west-1
   network: tier2
   tier1Cluster: false
   tokenTtl: 31536000s
@@ -33,7 +33,7 @@ metadata:
   name: standby
 spec:
   locality:
-    region: region2
+    region: eu-west-2
   network: tier2
   tier1Cluster: false
   tokenTtl: 31536000s

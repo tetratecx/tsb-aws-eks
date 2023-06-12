@@ -11,7 +11,8 @@ spec:
   namespaceSelector:
     names:
       - 'mgmt/tier1-abc'
-      - '*/gateway-abc'
+      - 'active/gateway-abc'
+      - 'standby/gateway-abc'
       - '*/ns-a'
       - '*/ns-b'
       - '*/ns-c'

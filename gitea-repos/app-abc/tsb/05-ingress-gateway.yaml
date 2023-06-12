@@ -12,35 +12,36 @@ spec:
   displayName: IngressGW_ABC
   http:
     - hostname: abc.demo.tetrate.io
-      name: ingress-abc-http
+      # name: ingress-abc-http
+      name: abc-http
       port: 80
       routing:
         rules:
           - route:
               host: ns-a/app-a.ns-a.svc.cluster.local
               port: 80
-    - hostname: abc-https.demo.tetrate.io
-      name: ingress-abc-https
-      port: 443
-      tls:
-        mode: SIMPLE
-        secretName: abc-https-cert
-      routing:
-        rules:
-          - route:
-              host: ns-a/app-a.ns-a.svc.cluster.local
-              port: 80
-    - hostname: abc-mtls.demo.tetrate.io
-      name: ingress-abc-mtls
-      port: 443
-      tls:
-        mode: MUTUAL  
-        secretName: abc-mtls-cert
-      routing:
-        rules:
-          - route:
-              host: ns-a/app-a.ns-a.svc.cluster.local
-              port: 80
+    # - hostname: abc-https.demo.tetrate.io
+    #   name: ingress-abc-https
+    #   port: 443
+    #   tls:
+    #     mode: SIMPLE
+    #     secretName: abc-https-cert
+    #   routing:
+    #     rules:
+    #       - route:
+    #           host: ns-a/app-a.ns-a.svc.cluster.local
+    #           port: 80
+    # - hostname: abc-mtls.demo.tetrate.io
+    #   name: ingress-abc-mtls
+    #   port: 443
+    #   tls:
+    #     mode: MUTUAL
+    #     secretName: abc-mtls-cert
+    #   routing:
+    #     rules:
+    #       - route:
+    #           host: ns-a/app-a.ns-a.svc.cluster.local
+    #           port: 80
   workloadSelector:
     labels:
       app: gw-ingress-abc
