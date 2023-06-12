@@ -128,6 +128,75 @@ function install_tsb_mp {
   print_info "Finished installation of tsb demo management/control plane in cluster '${mp_cluster_name}' in region '${mp_cluster_region}'"
 }
 
+# Uninstall tsb management plane cluster
+#   args:
+#     (1) mp kubeconfig file
+#     (2) mp cluster name
+#     (3) mp cluster region
+function uninstall_tsb_mp {
+  [[ -z "${1}" ]] && print_error "Please provide mp kubeconfig file as 1st argument" && return 2 || local mp_cluster_kubeconfig="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide mp cluster name as 2nd argument" && return 2 || local mp_cluster_name="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide mp cluster region as 3rd argument" && return 2 || local mp_cluster_region="${3}" ;
+
+  print_info "Start removing installation of tsb demo management/control plane in cluster '${mp_cluster_name}' in region '${mp_cluster_region}'"
+
+  # Put operators to sleep
+  for namespace in tsb istio-system istio-gateway xcp-multicluster cert-manager ; do
+    kubectl --kubeconfig ${mp_cluster_kubeconfig} get deployments -n ${namespace} -o custom-columns=:metadata.name \
+      | grep operator | xargs -I {} kubectl --kubeconfig ${mp_cluster_kubeconfig} scale deployment {} -n ${namespace} --replicas=0 ; 
+  done
+
+  sleep 5 ;
+
+  # Clean up namespace specific resources
+  for namespace in tsb istio-system istio-gateway xcp-multicluster cert-manager ; do
+    kubectl --kubeconfig ${mp_cluster_kubeconfig} get deployments -n ${namespace} -o custom-columns=:metadata.name \
+      | grep operator | xargs -I {} kubectl --kubeconfig ${mp_cluster_kubeconfig} delete deployment {} -n ${namespace} --timeout=10s --wait=false ;
+    sleep 5 ;
+    kubectl --kubeconfig ${mp_cluster_kubeconfig} delete --all deployments -n ${namespace} --timeout=10s --wait=false ;
+    kubectl --kubeconfig ${mp_cluster_kubeconfig} delete --all jobs -n ${namespace} --timeout=10s --wait=false ;
+    kubectl --kubeconfig ${mp_cluster_kubeconfig} delete --all statefulset -n ${namespace} --timeout=10s --wait=false ;
+    kubectl --kubeconfig ${mp_cluster_kubeconfig} get deployments -n ${namespace} -o custom-columns=:metadata.name \
+      | grep operator | xargs -I {} kubectl --kubeconfig ${mp_cluster_kubeconfig} patch deployment {} -n ${namespace} --type json \
+      --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]' ;
+    kubectl --kubeconfig ${mp_cluster_kubeconfig} delete --all deployments -n ${namespace} --timeout=10s --wait=false ;
+    sleep 5 ;
+    kubectl --kubeconfig ${mp_cluster_kubeconfig} delete namespace ${namespace} --timeout=10s --wait=false ;
+  done 
+
+  # Clean up cluster wide resources
+  kubectl --kubeconfig ${mp_cluster_kubeconfig} get mutatingwebhookconfigurations -o custom-columns=:metadata.name \
+    | xargs -I {} kubectl --kubeconfig ${mp_cluster_kubeconfig} delete mutatingwebhookconfigurations {}  --timeout=10s --wait=false ;
+  kubectl --kubeconfig ${mp_cluster_kubeconfig} get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
+    | xargs -I {} kubectl --kubeconfig ${mp_cluster_kubeconfig} delete crd {} --timeout=10s --wait=false ;
+  kubectl --kubeconfig ${mp_cluster_kubeconfig} get validatingwebhookconfigurations -o custom-columns=:metadata.name \
+    | xargs -I {} kubectl --kubeconfig ${mp_cluster_kubeconfig} delete validatingwebhookconfigurations {} --timeout=10s --wait=false ;
+  kubectl --kubeconfig ${mp_cluster_kubeconfig} get clusterrole -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tsb\|xcp" \
+    | xargs -I {} kubectl --kubeconfig ${mp_cluster_kubeconfig} delete clusterrole {} --timeout=10s --wait=false ;
+  kubectl --kubeconfig ${mp_cluster_kubeconfig} get clusterrolebinding -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tsb\|xcp" \
+    | xargs -I {} kubectl --kubeconfig ${mp_cluster_kubeconfig} delete clusterrolebinding {} --timeout=10s --wait=false ;
+
+  # Cleanup custom resource definitions
+  kubectl --kubeconfig ${mp_cluster_kubeconfig} get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
+    | xargs -I {} kubectl --kubeconfig ${mp_cluster_kubeconfig} delete crd {} --timeout=10s --wait=false ;
+  sleep 5 ;
+  kubectl --kubeconfig ${mp_cluster_kubeconfig} get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
+    | xargs -I {} kubectl --kubeconfig ${mp_cluster_kubeconfig} patch crd {} --type json --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]' ;
+  sleep 5 ;
+  kubectl --kubeconfig ${mp_cluster_kubeconfig} get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
+    | xargs -I {} kubectl --kubeconfig ${mp_cluster_kubeconfig} delete crd {} --timeout=10s --wait=false ;
+
+  # Clean up pending finalizer namespaces
+  for namespace in tsb istio-system istio-gateway xcp-multicluster cert-manager ; do
+    kubectl --kubeconfig ${mp_cluster_kubeconfig} get namespace ${namespace} -o json \
+      | tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/" \
+      | kubectl --kubeconfig ${mp_cluster_kubeconfig} replace --raw /api/v1/namespaces/${namespace}/finalize -f - ;
+  done
+
+  sleep 10 ;
+  print_info "Finished removing installation of tsb demo management/control plane in cluster '${mp_cluster_name}' in region '${mp_cluster_region}'"
+}
+
 # Bootstrap tsb control plane cluster installation
 #   args:
 #     (1) cp kubeconfig file
@@ -235,6 +304,75 @@ function wait_tsb_cp_ready {
   print_info "Finished installation of tsb control plane in cluster '${cp_cluster_name}' in region '${cp_cluster_region}'"
 }
 
+# Uninstall tsb control plane cluster
+#   args:
+#     (1) cp kubeconfig file
+#     (2) cp cluster name
+#     (3) cp cluster region
+function uninstall_tsb_cp {
+  [[ -z "${1}" ]] && print_error "Please provide cp kubeconfig file as 1st argument" && return 2 || local cp_cluster_kubeconfig="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide cp cluster name as 2nd argument" && return 2 || local cp_cluster_name="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide cp cluster region as 3rd argument" && return 2 || local cp_cluster_region="${3}" ;
+
+  print_info "Start removing installation of tsb control plane in cluster '${cp_cluster_name}' in region '${cp_cluster_region}'"
+
+  # Put operators to sleep
+  for namespace in tsb istio-system istio-gateway xcp-multicluster cert-manager ; do
+    kubectl --kubeconfig ${cp_cluster_kubeconfig} get deployments -n ${namespace} -o custom-columns=:metadata.name \
+      | grep operator | xargs -I {} kubectl --kubeconfig ${cp_cluster_kubeconfig} scale deployment {} -n ${namespace} --replicas=0 ; 
+  done
+
+  sleep 5 ;
+
+  # Clean up namespace specific resources
+  for namespace in tsb istio-system istio-gateway xcp-multicluster cert-manager ; do
+    kubectl --kubeconfig ${cp_cluster_kubeconfig} get deployments -n ${namespace} -o custom-columns=:metadata.name \
+      | grep operator | xargs -I {} kubectl --kubeconfig ${cp_cluster_kubeconfig} delete deployment {} -n ${namespace} --timeout=10s --wait=false ;
+    sleep 5 ;
+    kubectl --kubeconfig ${cp_cluster_kubeconfig} delete --all deployments -n ${namespace} --timeout=10s --wait=false ;
+    kubectl --kubeconfig ${cp_cluster_kubeconfig} delete --all jobs -n ${namespace} --timeout=10s --wait=false ;
+    kubectl --kubeconfig ${cp_cluster_kubeconfig} delete --all statefulset -n ${namespace} --timeout=10s --wait=false ;
+    kubectl --kubeconfig ${cp_cluster_kubeconfig} get deployments -n ${namespace} -o custom-columns=:metadata.name \
+      | grep operator | xargs -I {} kubectl --kubeconfig ${cp_cluster_kubeconfig} patch deployment {} -n ${namespace} --type json \
+      --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]' ;
+    kubectl --kubeconfig ${cp_cluster_kubeconfig} delete --all deployments -n ${namespace} --timeout=10s --wait=false ;
+    sleep 5 ;
+    kubectl --kubeconfig ${cp_cluster_kubeconfig} delete namespace ${namespace} --timeout=10s --wait=false ;
+  done 
+
+  # Clean up cluster wide resources
+  kubectl --kubeconfig ${cp_cluster_kubeconfig} get mutatingwebhookconfigurations -o custom-columns=:metadata.name \
+    | xargs -I {} kubectl --kubeconfig ${cp_cluster_kubeconfig} delete mutatingwebhookconfigurations {}  --timeout=10s --wait=false ;
+  kubectl --kubeconfig ${cp_cluster_kubeconfig} get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
+    | xargs -I {} kubectl --kubeconfig ${cp_cluster_kubeconfig} delete crd {} --timeout=10s --wait=false ;
+  kubectl --kubeconfig ${cp_cluster_kubeconfig} get validatingwebhookconfigurations -o custom-columns=:metadata.name \
+    | xargs -I {} kubectl --kubeconfig ${cp_cluster_kubeconfig} delete validatingwebhookconfigurations {} --timeout=10s --wait=false ;
+  kubectl --kubeconfig ${cp_cluster_kubeconfig} get clusterrole -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tsb\|xcp" \
+    | xargs -I {} kubectl --kubeconfig ${cp_cluster_kubeconfig} delete clusterrole {} --timeout=10s --wait=false ;
+  kubectl --kubeconfig ${cp_cluster_kubeconfig} get clusterrolebinding -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tsb\|xcp" \
+    | xargs -I {} kubectl --kubeconfig ${cp_cluster_kubeconfig} delete clusterrolebinding {} --timeout=10s --wait=false ;
+
+  # Cleanup custom resource definitions
+  kubectl --kubeconfig ${cp_cluster_kubeconfig} get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
+    | xargs -I {} kubectl --kubeconfig ${cp_cluster_kubeconfig} delete crd {} --timeout=10s --wait=false ;
+  sleep 5 ;
+  kubectl --kubeconfig ${cp_cluster_kubeconfig} get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
+    | xargs -I {} kubectl --kubeconfig ${cp_cluster_kubeconfig} patch crd {} --type json --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]' ;
+  sleep 5 ;
+  kubectl --kubeconfig ${cp_cluster_kubeconfig} get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
+    | xargs -I {} kubectl --kubeconfig ${cp_cluster_kubeconfig} delete crd {} --timeout=10s --wait=false ;
+
+  # Clean up pending finalizer namespaces
+  for namespace in tsb istio-system istio-gateway xcp-multicluster cert-manager ; do
+    kubectl --kubeconfig ${cp_cluster_kubeconfig} get namespace ${namespace} -o json \
+      | tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/" \
+      | kubectl --kubeconfig ${cp_cluster_kubeconfig} replace --raw /api/v1/namespaces/${namespace}/finalize -f - ;
+  done
+
+  sleep 10 ;
+  print_info "Finished removing installation of tsb control plane in cluster '${cp_cluster_name}' in region '${cp_cluster_region}'"
+}
+
 
 if [[ ${ACTION} = "install" ]]; then
 
@@ -277,7 +415,25 @@ if [[ ${ACTION} = "install" ]]; then
 fi
 
 if [[ ${ACTION} = "uninstall" ]]; then
-  log_warning "Not implemented yet" ;
+  cluster_count=$(jq '.eks.clusters | length' ${AWS_ENV_FILE}) ;
+  for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
+    cluster_tsb_type=$(jq -r '.eks.clusters['${cluster_index}'].tsb_type' ${AWS_ENV_FILE}) ;
+
+    if [[ "${cluster_tsb_type}" == "mp" ]]; then
+      mp_cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
+      mp_cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+      mp_cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
+      uninstall_tsb_mp "${mp_cluster_kubeconfig}" "${mp_cluster_name}" "${mp_cluster_region}" ;
+    fi
+
+    if [[ "${cluster_tsb_type}" == "cp" ]]; then
+      cp_cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
+      cp_cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
+      cp_cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
+      uninstall_tsb_cp "${cp_cluster_kubeconfig}" "${cp_cluster_name}" "${cp_cluster_region}" ;
+    fi
+  done
+
   exit 0 ;
 fi
 
