@@ -18,8 +18,8 @@ function login_tsb_admin {
   [[ -z "${1}" ]] && print_error "Please provide kubeconfig file as 1st argument" && return 2 || local kubeconfig_file="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide tsb organization as 2nd argument" && return 2 || local tsb_org="${2}" ;
 
-  expect <<DONE
-  spawn KUBECONFIG=${kubeconfig_file} tctl login --username admin --password admin --org ${tsb_org}
+  KUBECONFIG=${kubeconfig_file} expect <<DONE
+  spawn tctl login --username admin --password admin --org ${tsb_org}
   expect "Tenant:" { send "\\r" }
   expect eof
 DONE
