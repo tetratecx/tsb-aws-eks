@@ -22,4 +22,4 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 5m
-      limit: -1
+      limit: 10
