@@ -61,7 +61,7 @@ function patch_jwt_token_expiration_mp {
 function patch_enable_gitop_cp {
   [[ -z "${1}" ]] && print_error "Please provide kubeconfig file as 1st argument" && return 2 || local kubeconfig_file="${1}" ;
 
-  local gitops_patch='{"spec":{"components":{"gitops":{"enabled":true,"reconcileInterval":"30s","webhookTimeout":"2m"}}}}' ;
+  local gitops_patch='{"spec":{"components":{"gitops":{"enabled":true,"reconcileInterval":"30s","webhookTimeout":"30s"}}}}' ;
   kubectl --kubeconfig ${kubeconfig_file} -n istio-system patch controlplanes controlplane --type merge --patch ${gitops_patch}
 }
 
