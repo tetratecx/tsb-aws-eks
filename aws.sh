@@ -221,9 +221,12 @@ if [[ ${ACTION} = "down" ]]; then
     wait ${eksctl_pids[${cluster_index}]} ;
   done
 
-  # Delete TSB ECR image repositories
-  repo_region=$(jq -r '.ecr.region' ${AWS_ENV_FILE}) ;
-  delete_tsb_ecr_repos "${AWS_PROFILE}" "${repo_region}" ;
+  # Delete TSB ECR image repositories (if do_not_delete not set to true)
+  do_not_delete=$(jq -r '.ecr.do_not_delete' ${AWS_ENV_FILE}) ;
+  if ! [[ "${do_not_delete}" == "true" ]]; then
+    repo_region=$(jq -r '.ecr.region' ${AWS_ENV_FILE}) ;
+    delete_tsb_ecr_repos "${AWS_PROFILE}" "${repo_region}" ;
+  fi
 
   exit 0 ;
 fi

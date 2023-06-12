@@ -1,5 +1,6 @@
 {
   "ecr": {
+    "do_not_delete": true,
     "region": "eu-west-1",
     "tags": "Key=tetrate:owner,Value=bart Key=tetrate:team,Value=sales:se Key=tetrate:purpose,Value=poc Key=tetrate:lifespan,Value=ongoing Key=tetrate:customer,Value=coindcx"
   },
