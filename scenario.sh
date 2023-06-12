@@ -120,7 +120,15 @@ if [[ ${ACTION} = "info" ]]; then
     echo -n "." ; sleep 1 ;
   done
   echo "DONE" ;
+
+  echo -n "Waiting for Tier1 Gateway external hostname address of AppABC in mgmt cluster to resolve into an ip address: " ;
   appabc_tier1_ip=$(host ${appabc_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
+  while [[ -z "${appabc_tier1_ip}" ]] ; do
+    echo -n "." ; sleep 1 ;
+    appabc_tier1_ip=$(host ${appabc_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
+  done
+  echo "DONE" ;
+
 
   cp_kubeconfig=$(jq -r '.eks.clusters[] | select(.name=="active").kubeconfig' ${AWS_ENV_FILE}) ;
   echo -n "Waiting for Ingress Gateway external hostname address of AppABC in active cluster: " ;
@@ -128,7 +136,14 @@ if [[ ${ACTION} = "info" ]]; then
     echo -n "." ; sleep 1 ;
   done
   echo "DONE" ;
+
+  echo -n "Waiting for Ingress Gateway external hostname address of AppABC in active cluster to resolve into an ip address: " ;
   appabc_ingress_ip=$(host ${appabc_ingress_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
+  while [[ -z "${appabc_ingress_ip}" ]] ; do
+    echo -n "." ; sleep 1 ;
+    appabc_ingress_ip=$(host ${appabc_ingress_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
+  done
+  echo "DONE" ;
 
   print_info "appabc_tier1_hostname (mgmt cluster): ${appabc_tier1_hostname}" ;
   print_info "appabc_tier1_ip (mgmt cluster): ${appabc_tier1_ip}" ;
