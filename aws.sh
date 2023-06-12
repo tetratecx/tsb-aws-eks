@@ -96,6 +96,29 @@ function delete_eks_cluster {
 }
 
 
+
+# Delete all kubernetes services of type LoadBalancer to clean aws loadbalancer
+#   args:
+#     (1) kubeconfig file
+#
+function delete_all_lb_services {
+  [[ -z "${1}" ]] && print_error "Please provide kubeconfig file as 1st argument" && return 2 || local kubeconfig_file="${1}" ;
+
+  # First delete the operators so new services aren't being recreated
+  for namespace in tsb istio-system istio-gateway xcp-multicluster cert-manager ; do
+    kubectl --kubeconfig ${kubeconfig_file} get deployments -n ${namespace} -o custom-columns=:metadata.name \
+      | grep operator | xargs -I {} kubectl --kubeconfig ${kubeconfig_file} delete deployment {} -n ${namespace} --timeout=10s --wait=false ;
+    sleep 1 ;
+   done 
+
+  # Delete all service of type loadbalancer
+  kubectl --kubeconfig ${kubeconfig_file} get svc -A \
+    | grep "LoadBalancer" \
+    | awk '{print "kubectl --kubeconfig output/mgmt-kubeconfig.yaml delete service " $2 " --namespace " $1}' \
+    | while read kubectl_command ; do eval ${kubectl_command} ; done
+}
+
+
 if [[ ${ACTION} = "login" ]]; then
 
   if ! $(aws sts get-caller-identity --profile ${AWS_PROFILE} &>/dev/null); then
@@ -184,6 +207,8 @@ if [[ ${ACTION} = "down" ]]; then
 
   # Delete eks clusters in parallel using eksctl in background task
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
+    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
+    delete_all_lb_services "${cluster_kubeconfig}" ;
     delete_eks_cluster "${AWS_PROFILE}" "$(jq -r '.eks.clusters['${cluster_index}']' ${AWS_ENV_FILE})" &
     eksctl_pids[${cluster_index}]=$! ;
   done
