@@ -114,8 +114,8 @@ function install_tsb_mp {
 
   # Enable gitops in the cp plane of the management cluster
   patch_enable_gitop_cp ${mp_cluster_kubeconfig} ;
-  print_command "tctl x gitops grant ${mp_cluster_name}" ;
-  KUBECONFIG=${mp_cluster_kubeconfig}    ;
+  print_command "KUBECONFIG=${mp_cluster_kubeconfig} tctl x gitops grant ${mp_cluster_name}" ;
+  KUBECONFIG=${mp_cluster_kubeconfig} tctl x gitops grant ${mp_cluster_name} ;
 
   # Demo mgmt plane secret extraction (need to connect application clusters to mgmt cluster)
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/self_managed/onboarding-clusters#using-tctl-to-generate-secrets (demo install)
