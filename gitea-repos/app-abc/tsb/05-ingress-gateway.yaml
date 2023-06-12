@@ -12,7 +12,7 @@ spec:
   displayName: IngressGW_ABC
   http:
     - hostname: abc.demo.tetrate.io
-      name: abc-http
+      name: ingress-abc-http
       port: 80
       routing:
         rules:
@@ -20,7 +20,7 @@ spec:
               host: ns-a/app-a.ns-a.svc.cluster.local
               port: 80
     - hostname: abc-https.demo.tetrate.io
-      name: abc-https
+      name: ingress-abc-https
       port: 443
       tls:
         mode: SIMPLE
@@ -31,7 +31,7 @@ spec:
               host: ns-a/app-a.ns-a.svc.cluster.local
               port: 80
     - hostname: abc-mtls.demo.tetrate.io
-      name: abc-mtls
+      name: ingress-abc-mtls
       port: 443
       tls:
         mode: MUTUAL  

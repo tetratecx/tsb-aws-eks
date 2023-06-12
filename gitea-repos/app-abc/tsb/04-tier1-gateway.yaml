@@ -15,13 +15,13 @@ spec:
         - name: active
         - name: standby
       hostname: abc.demo.tetrate.io
-      name: abc-http
+      name: tier1-abc-http
       port: 80
     - clusters:
         - name: active
         - name: standby
       hostname: abc-https.demo.tetrate.io
-      name: abc-https
+      name: tier1-abc-https
       port: 443
       tls:
         mode: SIMPLE
@@ -30,7 +30,7 @@ spec:
         - name: active
         - name: standby
       hostname: abc-mtls.demo.tetrate.io
-      name: abc-mtls
+      name: tier1-abc-mtls
       port: 443
       tls:
         mode: MUTUAL

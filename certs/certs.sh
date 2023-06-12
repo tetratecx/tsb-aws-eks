@@ -180,11 +180,12 @@ function generate_kubernetes_ingress_secret_mtls {
 
 ### Cert Generation Tests
 
-# generate_root_cert ;
-# generate_istio_cert mgmt-cluster ;
-# generate_istio_cert active-cluster ;
-# generate_istio_cert standby-cluster ;
-# generate_client_cert vm-onboarding tetrate.prod ;
-# generate_server_cert vm-onboarding tetrate.prod ;
+# outdir=$(pwd) ;
+# generate_root_cert ${outdir} ;
+# generate_istio_cert ${outdir} mgmt ;
+# generate_istio_cert ${outdir} active ;
+# generate_istio_cert ${outdir} standby ;
+# generate_client_cert ${outdir} abc-https ;
+# generate_server_cert ${outdir} abc-mtls ;
 
 

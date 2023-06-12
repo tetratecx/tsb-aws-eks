@@ -12,7 +12,7 @@ spec:
   displayName: Tier1Gateway_ABC
   namespaceSelector:
     names:
-      - "*/tier1-abc"
+      - "mgmt/tier1-abc"
 ---
 apiVersion: gateway.tsb.tetrate.io/v2
 kind: Group

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
 source ${ROOT_DIR}/helpers.sh ;
-source ${ROOT_DIR}/certs.sh ;
 source ${ROOT_DIR}/addons/aws/ecr.sh ;
 
 AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
@@ -80,10 +79,7 @@ function install_tsb_mp {
 
   # bootstrap cluster with self signed certificate that share a common root certificate
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/self_managed/onboarding-clusters#intermediate-istio-ca-certificates
-  local certs_base_dir="${ROOT_DIR}/output/certs" ;
-  mkdir -p "${certs_base_dir}" ;
-  generate_istio_cert "${certs_base_dir}" "${mp_cluster_name}" ;
-
+  local certs_base_dir="${ROOT_DIR}/certs" ;
   if ! kubectl --kubeconfig ${mp_cluster_kubeconfig} get ns istio-system &>/dev/null; then
     kubectl --kubeconfig ${mp_cluster_kubeconfig} create ns istio-system ;
   fi
@@ -189,9 +185,6 @@ function bootstrap_install_tsb_cp {
   # bootstrap cluster with self signed certificate that share a common root certificate
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/self_managed/onboarding-clusters#intermediate-istio-ca-certificates
   local certs_base_dir="${ROOT_DIR}/output/certs" ;
-  mkdir -p "${certs_base_dir}" ;
-  generate_istio_cert "${certs_base_dir}" "${cp_cluster_name}" ;
-
   if ! kubectl --kubeconfig ${cp_cluster_kubeconfig} get ns istio-system &>/dev/null; then
     kubectl --kubeconfig ${cp_cluster_kubeconfig} create ns istio-system ; 
   fi

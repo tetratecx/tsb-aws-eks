@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
 source ${ROOT_DIR}/helpers.sh ;
-source ${ROOT_DIR}/certs.sh ;
 source ${ROOT_DIR}/addons/aws/ecr.sh ;
 source ${ROOT_DIR}/addons/helm/argocd.sh ;
 source ${ROOT_DIR}/addons/helm/gitea.sh ;
@@ -73,55 +72,6 @@ if [[ ${ACTION} = "deploy" ]]; then
   # Get public gitea url
   mp_kubeconfig=$(jq -r '.eks.clusters[] | select(.name=="mgmt").kubeconfig' ${AWS_ENV_FILE}) ;
   gitea_public_url=$(gitea_get_http_url ${mp_kubeconfig}) ;
-
-  # Generate the necessary client and server application certificates
-  certs_base_dir="${ROOT_DIR}/output/certs" ;
-  mkdir -p "${certs_base_dir}" ;
-  # HTTPS SERVER
-  generate_server_cert "${certs_base_dir}" "abc-https" ;
-  generate_kubernetes_ingress_secret_https \
-    "${GITEA_REPOS_DIR}/app-abc/k8s/mgmt/00-tier1-https-secret.yaml" \
-    "abc-https-cert" \
-    "${certs_base_dir}/abc-https/server.abc-https.demo.tetrate.io-key.pem" \
-    "${certs_base_dir}/abc-https/server.abc-https.demo.tetrate.io-cert.pem" \
-    "tier1-abc" ;
-  generate_kubernetes_ingress_secret_https \
-    "${GITEA_REPOS_DIR}/app-abc/k8s/active/00-ingress-https-secret.yaml" \
-    "abc-https-cert" \
-    "${certs_base_dir}/abc-https/server.abc-https.demo.tetrate.io-key.pem" \
-    "${certs_base_dir}/abc-https/server.abc-https.demo.tetrate.io-cert.pem" \
-    "gateway-abc" ;
-  generate_kubernetes_ingress_secret_https \
-    "${GITEA_REPOS_DIR}/app-abc/k8s/standby/00-ingress-https-secret.yaml" \
-    "abc-https-cert" \
-    "${certs_base_dir}/abc-https/server.abc-https.demo.tetrate.io-key.pem" \
-    "${certs_base_dir}/abc-https/server.abc-https.demo.tetrate.io-cert.pem" \
-    "gateway-abc" ;
-  # MTLS SERVER
-  generate_server_cert "${certs_base_dir}" "abc-mtls" ;
-  generate_client_cert "${certs_base_dir}" "abc-mtls" ;
-  generate_kubernetes_ingress_secret_mtls \
-    "${GITEA_REPOS_DIR}/app-abc/k8s/mgmt/00-tier1-mtls-secret.yaml" \
-    "abc-mtls-cert" \
-    "${certs_base_dir}/abc-mtls/server.abc-mtls.demo.tetrate.io-key.pem" \
-    "${certs_base_dir}/abc-mtls/server.abc-mtls.demo.tetrate.io-cert.pem" \
-    "${certs_base_dir}/root-cert.pem" \
-    "tier1-abc" ;
-  generate_kubernetes_ingress_secret_mtls \
-    "${GITEA_REPOS_DIR}/app-abc/k8s/active/00-ingress-mtls-secret.yaml" \
-    "abc-mtls-cert" \
-    "${certs_base_dir}/abc-mtls/server.abc-mtls.demo.tetrate.io-key.pem" \
-    "${certs_base_dir}/abc-mtls/server.abc-mtls.demo.tetrate.io-cert.pem" \
-    "${certs_base_dir}/root-cert.pem" \
-    "gateway-abc" ;
-  generate_kubernetes_ingress_secret_mtls \
-    "${GITEA_REPOS_DIR}/app-abc/k8s/standby/00-ingress-mtls-secret.yaml" \
-    "abc-mtls-cert" \
-    "${certs_base_dir}/abc-mtls/server.abc-mtls.demo.tetrate.io-key.pem" \
-    "${certs_base_dir}/abc-mtls/server.abc-mtls.demo.tetrate.io-cert.pem" \
-    "${certs_base_dir}/root-cert.pem" \
-    "gateway-abc" ;
-
 
   ecr_repo_region=$(jq -r '.ecr.region' ${AWS_ENV_FILE}) ;
   ecr_repository_url=$(get_ecr_repository_url "${AWS_PROFILE}" "${ecr_repo_region}") ;
