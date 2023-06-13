@@ -17,6 +17,9 @@ Copy and modify [env_host.template.json](env_host.template.json) file to [env_ho
 
 The `TSB_REPO_APIKEY` and `TSB_REPO_USERNAME` will be given to you by a Tetrate Sales Representative.
 
+The AWS specific configuration is stored at [env_aws.json](env_aws.json) and can be updated to suite your 
+AWS needs as well. Since it does not contain any sensative material, the full file is available in git.
+
 ## Setup AWS EKS Clusters and install Tetrate Service Bridge
 
 Run the make file to go through the setup process
@@ -31,7 +34,7 @@ prereq-check                   Check if prerequisites are installed
 prereq-install                 Install prerequisites
 aws-cli-login                  Login to AWS CLI
 aws-up                         Create eks clusters and ecr repository [eta 17min]
-aws-down                       Delete eks clusters and ecr repository [eta 11min]
+aws-down                       Delete eks clusters and ecr repository [eta 12min]
 aws-info                       Get eks clusters and ecr repository information
 addons-deploy                  Deploy cluster addons (argcocd, gitea)
 addons-undeploy                Undeploy cluster addons (argcocd, gitea)
@@ -39,6 +42,9 @@ addons-info                    Get cluster addons information (argcocd, gitea)
 tsb-install                    Install tsb mp and cp
 tsb-uninstall                  Uninstall tsb mp and cp
 tsb-info                       Get tsb information
+scenario-deploy                Deploy demo scenarios
+scenario-undeploy              Undeploy demo scenarios
+scenario-info                  Get scenarios information
 ```
 
 Before spinning up your EKS cluster on AWS, you will need to login into the AWS CLI using the awscli-login target.
@@ -54,4 +60,5 @@ Temporary setup artifacts bespoke to your multi-cluster setup include
 - WIP
 
 These files are part of this repo's `.gitignore` configuration.
-AWS credentials are not stored in this repo, but a dedicated profile defined in `env.json` (default `tetrate-aws-tsb-poc`) for `~/.aws/config` is used for this.
+AWS credentials are not stored in this repo, but a dedicated profile defined in [env_aws.json](env_aws.json) (default `tetrate-aws-tsb-poc`) for `~/.aws/config` is used for this. There is a makefile target to login with this 
+profile, asking for your credentials.
