@@ -112,7 +112,7 @@ fi
 
 if [[ ${ACTION} = "info" ]]; then
 
-  certs_base_dir="${ROOT_DIR}/output/certs" ;
+  certs_base_dir="${ROOT_DIR}/certs" ;
 
   mp_kubeconfig=$(jq -r '.eks.clusters[] | select(.name=="mgmt").kubeconfig' ${AWS_ENV_FILE}) ;
   echo -n "Waiting for Tier1 Gateway external hostname address of AppABC in mgmt cluster: " ;
@@ -145,19 +145,20 @@ if [[ ${ACTION} = "info" ]]; then
   done
   echo "DONE" ;
 
+  echo ;
   print_info "appabc_tier1_hostname (mgmt cluster): ${appabc_tier1_hostname}" ;
   print_info "appabc_tier1_ip (mgmt cluster): ${appabc_tier1_ip}" ;
   print_info "appabc_ingress_hostname (active cluster): ${appabc_ingress_hostname}" ;
   print_info "appabc_ingress_ip (active cluster): ${appabc_ingress_ip}" ;
   echo ;
   echo ;
-  echo "HTTP Traffic to Application ABC through Tier1 in mgmt cluster" ;
+  print_info "HTTP Traffic to Application ABC through Tier1 in mgmt cluster" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"abc.demo.tetrate.io:80:${appabc_tier1_ip}\" --url \"http://abc.demo.tetrate.io/proxy/app-b.ns-b/proxy/app-c.ns-c\"" ;
   echo ;
-  echo "HTTPS Traffic to Application ABC through Tier1 in mgmt cluster" ;
+  print_info "HTTPS Traffic to Application ABC through Tier1 in mgmt cluster" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"abc-https.demo.tetrate.io:443:${appabc_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://abc-https.demo.tetrate.io/proxy/app-b.ns-b/proxy/app-c.ns-c\"" ;
   echo ;
-  echo "MTLS Traffic to Application ABC through Tier1 in mgmt cluster" ;
+  print_info "MTLS Traffic to Application ABC through Tier1 in mgmt cluster" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"abc-mtls.demo.tetrate.io:443:${appabc_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/abc-mtls/client.abc-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/abc-mtls/client.abc-mtls.demo.tetrate.io-key.pem --url \"https://abc-mtls.demo.tetrate.io/proxy/app-b.ns-b/proxy/app-c.ns-c\"" ;
   echo ;
   echo ;
