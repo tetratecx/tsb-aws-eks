@@ -1,0 +1,57 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-d
+    service: app-d
+  name: app-d
+  namespace: ns-d
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+    - name: tcp
+      port: 3000
+      targetPort: 3000
+  selector:
+    app: app-d
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-e
+    service: app-e
+  name: app-e
+  namespace: ns-e
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+    - name: tcp
+      port: 3000
+      targetPort: 3000
+  selector:
+    app: app-e
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-f
+    service: app-f
+  name: app-f
+  namespace: ns-f
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+    - name: tcp
+      port: 3000
+      targetPort: 3000
+  selector:
+    app: app-f

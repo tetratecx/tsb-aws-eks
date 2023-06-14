@@ -5,14 +5,14 @@ metadata:
   annotations:
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
-    tsb.tetrate.io/workspace: abc
-  name: tier1-gateway-abc
+    tsb.tetrate.io/workspace: def
+  name: tier1-gateway-def
 spec:
   configMode: BRIDGED
-  displayName: Tier1Gateway_ABC
+  displayName: Tier1Gateway_DEF
   namespaceSelector:
     names:
-      - "mgmt/tier1-abc"
+      - "mgmt/tier1-def"
 ---
 apiVersion: gateway.tsb.tetrate.io/v2
 kind: Group
@@ -20,15 +20,29 @@ metadata:
   annotations:
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
-    tsb.tetrate.io/workspace: abc
-  name: ingress-gateway-abc
+    tsb.tetrate.io/workspace: def
+  name: ingress-gateway-def
 spec:
   configMode: BRIDGED
-  displayName: IngressGateway_ABC
+  displayName: IngressGateway_DEF
   namespaceSelector:
     names:
-      - "active/gateway-abc"
-      - "standby/gateway-abc"
+      - "active/ingress-def"
+---
+apiVersion: gateway.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: def
+  name: egress-gateway-def
+spec:
+  configMode: BRIDGED
+  displayName: EgressGateway_DEF
+  namespaceSelector:
+    names:
+      - "active/egress-def"
 ---
 apiVersion: traffic.tsb.tetrate.io/v2
 kind: Group
@@ -36,14 +50,14 @@ metadata:
   annotations:
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
-    tsb.tetrate.io/workspace: abc
-  name: traffic-a
+    tsb.tetrate.io/workspace: def
+  name: traffic-d
 spec:
   configMode: BRIDGED
-  displayName: Traffic_AppA
+  displayName: Traffic_AppD
   namespaceSelector:
     names:
-      - "*/ns-a"
+      - "active/ns-d"
 ---
 apiVersion: traffic.tsb.tetrate.io/v2
 kind: Group
@@ -51,14 +65,14 @@ metadata:
   annotations:
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
-    tsb.tetrate.io/workspace: abc
-  name: traffic-b
+    tsb.tetrate.io/workspace: def
+  name: traffic-e
 spec:
   configMode: BRIDGED
-  displayName: Traffic_AppB
+  displayName: Traffic_AppE
   namespaceSelector:
     names:
-      - "*/ns-b"
+      - "active/ns-e"
 ---
 apiVersion: traffic.tsb.tetrate.io/v2
 kind: Group
@@ -66,14 +80,14 @@ metadata:
   annotations:
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
-    tsb.tetrate.io/workspace: abc
-  name: traffic-c
+    tsb.tetrate.io/workspace: def
+  name: traffic-f
 spec:
   configMode: BRIDGED
-  displayName: Traffic_AppC
+  displayName: Traffic_AppF
   namespaceSelector:
     names:
-      - "*/ns-c"
+      - "active/ns-f"
 ---
 apiVersion: security.tsb.tetrate.io/v2
 kind: Group
@@ -81,15 +95,14 @@ metadata:
   annotations:
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
-    tsb.tetrate.io/workspace: abc
-  name: security-ingress-abc
+    tsb.tetrate.io/workspace: def
+  name: security-ingress-def
 spec:
   configMode: BRIDGED
-  displayName: Security_IngressABC
+  displayName: Security_IngressDEF
   namespaceSelector:
     names:
-      - "active/gateway-abc"
-      - "standby/gateway-abc"
+      - "active/ingress-def"
 ---
 apiVersion: security.tsb.tetrate.io/v2
 kind: Group
@@ -97,14 +110,14 @@ metadata:
   annotations:
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
-    tsb.tetrate.io/workspace: abc
-  name: security-a
+    tsb.tetrate.io/workspace: def
+  name: security-egress-def
 spec:
   configMode: BRIDGED
-  displayName: Security_AppA
+  displayName: Security_EgressDEF
   namespaceSelector:
     names:
-      - "*/ns-a"
+      - "active/egress-def"
 ---
 apiVersion: security.tsb.tetrate.io/v2
 kind: Group
@@ -112,14 +125,14 @@ metadata:
   annotations:
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
-    tsb.tetrate.io/workspace: abc
-  name: security-b
+    tsb.tetrate.io/workspace: def
+  name: security-d
 spec:
   configMode: BRIDGED
-  displayName: Security_AppB
+  displayName: Security_AppD
   namespaceSelector:
     names:
-      - "*/ns-b"
+      - "active/ns-d"
 ---
 apiVersion: security.tsb.tetrate.io/v2
 kind: Group
@@ -127,11 +140,26 @@ metadata:
   annotations:
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
-    tsb.tetrate.io/workspace: abc
-  name: security-c
+    tsb.tetrate.io/workspace: def
+  name: security-e
 spec:
   configMode: BRIDGED
-  displayName: Security_AppC
+  displayName: Security_AppE
   namespaceSelector:
     names:
-      - "*/ns-c"
+      - "active/ns-e"
+---
+apiVersion: security.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: def
+  name: security-f
+spec:
+  configMode: BRIDGED
+  displayName: Security_AppF
+  namespaceSelector:
+    names:
+      - "active/ns-f"

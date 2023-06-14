@@ -4,6 +4,10 @@
     "name": "app-abc"
   },
   {
+    "description": "Deployment of Application DEF",
+    "name": "app-def"
+  },
+  {
     "description": "TSB Administration",
     "name": "tsb-admin"
   }

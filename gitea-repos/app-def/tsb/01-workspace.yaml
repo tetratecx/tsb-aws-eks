@@ -1,0 +1,18 @@
+---
+apiVersion: tsb.tetrate.io/v2
+kind: Workspace
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+  name: def
+spec:
+  displayName: WorkSpace_DEF
+  namespaceSelector:
+    names:
+      - mgmt/tier1-def
+      - active/ingress-def
+      - active/egress-def
+      - active/ns-d
+      - active/ns-e
+      - active/ns-f

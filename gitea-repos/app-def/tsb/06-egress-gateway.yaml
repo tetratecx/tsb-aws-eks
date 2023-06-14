@@ -1,0 +1,20 @@
+---
+apiVersion: gateway.tsb.tetrate.io/v2
+kind: EgressGateway
+metadata:
+  annotations:
+    tsb.tetrate.io/gatewayGroup: egress-gateway-def
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: def
+  name: egress-def
+spec:
+  authorization:
+    - from:
+        mode: CUSTOM
+        serviceAccounts: ["ns-e/sa-app-e"]
+      to: ["ifconfig.me"]
+  workloadSelector:
+    labels:
+      app: gw-egress-def
+    namespace: egress-def

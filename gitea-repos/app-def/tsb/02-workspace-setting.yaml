@@ -1,0 +1,10 @@
+---
+apiVersion: tsb.tetrate.io/v2
+kind: WorkspaceSetting
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: def
+  name: def-setting
+spec: {}

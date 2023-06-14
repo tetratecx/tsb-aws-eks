@@ -1,0 +1,47 @@
+---
+apiVersion: gateway.tsb.tetrate.io/v2
+kind: IngressGateway
+metadata:
+  annotations:
+    tsb.tetrate.io/gatewayGroup: ingress-gateway-def
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: def
+  name: ingress-def
+spec:
+  displayName: IngressGW_DEF
+  http:
+    - hostname: def.demo.tetrate.io
+      name: def-http
+      port: 80
+      routing:
+        rules:
+          - route:
+              host: ns-d/app-d.ns-d.svc.cluster.local
+              port: 80
+    - hostname: def-https.demo.tetrate.io
+      name: def-https
+      port: 443
+      routing:
+        rules:
+          - route:
+              host: ns-d/app-d.ns-d.svc.cluster.local
+              port: 80
+      tls:
+        mode: SIMPLE
+        secretName: def-https-cert
+    - hostname: def-mtls.demo.tetrate.io
+      name: def-mtls
+      port: 443
+      routing:
+        rules:
+          - route:
+              host: ns-d/app-d.ns-d.svc.cluster.local
+              port: 80
+      tls:
+        mode: MUTUAL
+        secretName: def-mtls-cert
+  workloadSelector:
+    labels:
+      app: gw-ingress-def
+    namespace: ingress-def

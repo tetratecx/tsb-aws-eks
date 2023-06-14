@@ -1,0 +1,7 @@
+---
+apiVersion: install.tetrate.io/v1alpha1
+kind: EgressGateway
+metadata:
+  name: gw-egress-def
+  namespace: egress-def
+spec: {}

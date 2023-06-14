@@ -253,13 +253,43 @@ function generate_kubernetes_ingress_secret_mtls {
 
 
 ### Cert Generation Tests
-
 outdir=$(pwd) ;
+
 # generate_root_cert ${outdir} ;
+
 # generate_istio_cert ${outdir} mgmt ;
 # generate_istio_cert ${outdir} active ;
 # generate_istio_cert ${outdir} standby ;
-# generate_client_cert ${outdir} abc-https ;
+
+# generate_tsb_gui_cert ${outdir} "tetrate" ;
+# generate_xcp_central_cert ${outdir} "tetrate" ;
+
+# generate_server_cert ${outdir} abc-https ;
+# generate_client_cert ${outdir} abc-mtls ;
 # generate_server_cert ${outdir} abc-mtls ;
-generate_tsb_gui_cert ${outdir} "tetrate" ;
-generate_xcp_central_cert ${outdir} "tetrate" ;
+# generate_kubernetes_ingress_secret_https \
+#   ${outdir}/abc-https/abc-https-cert.yaml \
+#   abc-https-cert \
+#   ${outdir}/abc-https/server.abc-https.demo.tetrate.io-key.pem \
+#   ${outdir}/abc-https/server.abc-https.demo.tetrate.io-cert.pem ;
+# generate_kubernetes_ingress_secret_mtls \
+#   ${outdir}/abc-mtls/abc-mtls-cert.yaml \
+#   abc-mtls-cert \
+#   ${outdir}/abc-mtls/server.abc-mtls.demo.tetrate.io-key.pem \
+#   ${outdir}/abc-mtls/server.abc-mtls.demo.tetrate.io-cert.pem \
+#   ${outdir}/abc-mtls/root-cert.pem ;
+
+# generate_server_cert ${outdir} def-https ;
+# generate_client_cert ${outdir} def-mtls ;
+# generate_server_cert ${outdir} def-mtls ;
+# generate_kubernetes_ingress_secret_https \
+#   ${outdir}/def-https/def-https-cert.yaml \
+#   def-https-cert \
+#   ${outdir}/def-https/server.def-https.demo.tetrate.io-key.pem \
+#   ${outdir}/def-https/server.def-https.demo.tetrate.io-cert.pem ;
+# generate_kubernetes_ingress_secret_mtls \
+#   ${outdir}/def-mtls/def-mtls-cert.yaml \
+#   def-mtls-cert \
+#   ${outdir}/def-mtls/server.def-mtls.demo.tetrate.io-key.pem \
+#   ${outdir}/def-mtls/server.def-mtls.demo.tetrate.io-cert.pem \
+#   ${outdir}/def-mtls/root-cert.pem ;

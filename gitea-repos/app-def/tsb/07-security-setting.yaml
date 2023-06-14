@@ -1,0 +1,63 @@
+---
+apiVersion: security.tsb.tetrate.io/v2
+kind: SecuritySetting
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/securityGroup: security-d
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: def
+  name: ingress-to-d
+spec:
+  authenticationSettings:
+    trafficMode: REQUIRED
+  authorization:
+    mode: RULES
+    rules:
+      allow:
+        - from:
+            fqn: organizations/tetrate/tenants/prod/workspaces/def/securitygroups/security-ingress-def
+          to:
+            fqn: organizations/tetrate/tenants/prod/workspaces/def/securitygroups/security-d
+---
+apiVersion: security.tsb.tetrate.io/v2
+kind: SecuritySetting
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/securityGroup: security-e
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: def
+  name: d-to-e
+spec:
+  authenticationSettings:
+    trafficMode: REQUIRED
+  authorization:
+    mode: RULES
+    rules:
+      allow:
+        - from:
+            fqn: organizations/tetrate/tenants/prod/workspaces/def/securitygroups/security-d
+          to:
+            fqn: organizations/tetrate/tenants/prod/workspaces/def/securitygroups/security-e
+---
+apiVersion: security.tsb.tetrate.io/v2
+kind: SecuritySetting
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/securityGroup: security-f
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: def
+  name: d-to-f
+spec:
+  authenticationSettings:
+    trafficMode: REQUIRED
+  authorization:
+    mode: RULES
+    rules:
+      allow:
+        - from:
+            fqn: organizations/tetrate/tenants/prod/workspaces/def/securitygroups/security-d
+          to:
+            fqn: organizations/tetrate/tenants/prod/workspaces/def/securitygroups/security-f

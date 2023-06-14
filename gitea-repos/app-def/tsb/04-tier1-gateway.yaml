@@ -1,0 +1,38 @@
+---
+apiVersion: gateway.tsb.tetrate.io/v2
+kind: Tier1Gateway
+metadata:
+  annotations:
+    tsb.tetrate.io/gatewayGroup: tier1-gateway-def
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: def
+  name: tier1-def
+spec:
+  displayName: Tier1GW_DEF
+  externalServers:
+    - clusters:
+        - name: active
+      hostname: def.demo.tetrate.io
+      name: def-http
+      port: 80
+    - clusters:
+        - name: active
+      hostname: def-https.demo.tetrate.io
+      name: def-https
+      port: 443
+      tls:
+        mode: SIMPLE
+        secretName: def-https-cert
+    - clusters:
+        - name: active
+      hostname: def-mtls.demo.tetrate.io
+      name: def-mtls
+      port: 443
+      tls:
+        mode: MUTUAL
+        secretName: def-mtls-cert
+  workloadSelector:
+    labels:
+      app: gw-tier1-def
+    namespace: tier1-def

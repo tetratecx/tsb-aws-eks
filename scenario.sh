@@ -120,6 +120,11 @@ if [[ ${ACTION} = "info" ]]; then
     echo -n "." ; sleep 1 ;
   done
   echo "DONE" ;
+  echo -n "Waiting for Tier1 Gateway external hostname address of AppDEF in mgmt cluster: " ;
+  while ! appdef_tier1_hostname=$(kubectl --kubeconfig ${mp_kubeconfig} get svc -n tier1-def gw-tier1-def --output jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null) ; do
+    echo -n "." ; sleep 1 ;
+  done
+  echo "DONE" ;
 
   echo -n "Waiting for Tier1 Gateway external hostname address of AppABC in mgmt cluster to resolve into an ip address: " ;
   appabc_tier1_ip=$(host ${appabc_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
@@ -128,29 +133,39 @@ if [[ ${ACTION} = "info" ]]; then
     appabc_tier1_ip=$(host ${appabc_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
   done
   echo "DONE" ;
-
-
-  cp_kubeconfig=$(jq -r '.eks.clusters[] | select(.name=="active").kubeconfig' ${AWS_ENV_FILE}) ;
-  echo -n "Waiting for Ingress Gateway external hostname address of AppABC in active cluster: " ;
-  while ! appabc_ingress_hostname=$(kubectl --kubeconfig ${cp_kubeconfig} get svc -n gateway-abc gw-ingress-abc --output jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null) ; do
+  echo -n "Waiting for Tier1 Gateway external hostname address of AppDEF in mgmt cluster to resolve into an ip address: " ;
+  appdef_tier1_ip=$(host ${appdef_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
+  while [[ -z "${appdef_tier1_ip}" ]] ; do
     echo -n "." ; sleep 1 ;
+    appdef_tier1_ip=$(host ${appdef_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
   done
   echo "DONE" ;
 
-  echo -n "Waiting for Ingress Gateway external hostname address of AppABC in active cluster to resolve into an ip address: " ;
-  appabc_ingress_ip=$(host ${appabc_ingress_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
-  while [[ -z "${appabc_ingress_ip}" ]] ; do
-    echo -n "." ; sleep 1 ;
-    appabc_ingress_ip=$(host ${appabc_ingress_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
-  done
-  echo "DONE" ;
+
+  # cp_kubeconfig=$(jq -r '.eks.clusters[] | select(.name=="active").kubeconfig' ${AWS_ENV_FILE}) ;
+  # echo -n "Waiting for Ingress Gateway external hostname address of AppABC in active cluster: " ;
+  # while ! appabc_ingress_hostname=$(kubectl --kubeconfig ${cp_kubeconfig} get svc -n gateway-abc gw-ingress-abc --output jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null) ; do
+  #   echo -n "." ; sleep 1 ;
+  # done
+  # echo "DONE" ;
+
+  # echo -n "Waiting for Ingress Gateway external hostname address of AppABC in active cluster to resolve into an ip address: " ;
+  # appabc_ingress_ip=$(host ${appabc_ingress_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
+  # while [[ -z "${appabc_ingress_ip}" ]] ; do
+  #   echo -n "." ; sleep 1 ;
+  #   appabc_ingress_ip=$(host ${appabc_ingress_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
+  # done
+  # echo "DONE" ;
 
   echo ;
   print_info "appabc_tier1_hostname (mgmt cluster): ${appabc_tier1_hostname}" ;
   print_info "appabc_tier1_ip (mgmt cluster): ${appabc_tier1_ip}" ;
-  print_info "appabc_ingress_hostname (active cluster): ${appabc_ingress_hostname}" ;
-  print_info "appabc_ingress_ip (active cluster): ${appabc_ingress_ip}" ;
+  print_info "appdef_tier1_hostname (mgmt cluster): ${appdef_tier1_hostname}" ;
+  print_info "appdef_tier1_ip (mgmt cluster): ${appdef_tier1_ip}" ;
+  # print_info "appabc_ingress_hostname (active cluster): ${appabc_ingress_hostname}" ;
+  # print_info "appabc_ingress_ip (active cluster): ${appabc_ingress_ip}" ;
   echo ;
+  
   echo ;
   print_info "HTTP Traffic to Application ABC through Tier1 in mgmt cluster" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"abc.demo.tetrate.io:80:${appabc_tier1_ip}\" --url \"http://abc.demo.tetrate.io/proxy/app-b.ns-b/proxy/app-c.ns-c\"" ;
@@ -161,16 +176,31 @@ if [[ ${ACTION} = "info" ]]; then
   print_info "MTLS Traffic to Application ABC through Tier1 in mgmt cluster" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"abc-mtls.demo.tetrate.io:443:${appabc_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/abc-mtls/client.abc-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/abc-mtls/client.abc-mtls.demo.tetrate.io-key.pem --url \"https://abc-mtls.demo.tetrate.io/proxy/app-b.ns-b/proxy/app-c.ns-c\"" ;
   echo ;
+  
   echo ;
-  echo "HTTP Traffic to Application ABC through Ingress in active cluster" ;
-  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"abc.demo.tetrate.io:80:${appabc_ingress_ip}\" --url \"http://abc.demo.tetrate.io/proxy/app-b.ns-b/proxy/app-c.ns-c\"" ;
+  print_info "HTTP Traffic to Application DEF through Tier1 in mgmt cluster" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def.demo.tetrate.io:80:${appdef_tier1_ip}\" --url \"http://def.demo.tetrate.io/proxy/app-e.ns-e/proxy/ifconfig.me\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def.demo.tetrate.io:80:${appdef_tier1_ip}\" --url \"http://def.demo.tetrate.io/proxy/app-f.ns-f/proxy/ifconfig.me\"" ;
   echo ;
-  echo "HTTPS Traffic to Application ABC through Ingress in active cluster" ;
-  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"abc-https.demo.tetrate.io:443:${appabc_ingress_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://abc-https.demo.tetrate.io/proxy/app-b.ns-b/proxy/app-c.ns-c\"" ;
+  print_info "HTTPS Traffic to Application DEF through Tier1 in mgmt cluster" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-https.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://def-https.demo.tetrate.io/proxy/app-e.ns-e/proxy/ifconfig.me\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-https.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://def-https.demo.tetrate.io/proxy/app-f.ns-f/proxy/ifconfig.me\"" ;
   echo ;
-  echo "MTLS Traffic to Application ABC through Ingress in active cluster" ;
-  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"abc-mtls.demo.tetrate.io:443:${appabc_ingress_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/abc-mtls/client.abc-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/abc-mtls/client.abc-mtls.demo.tetrate.io-key.pem --url \"https://abc-mtls.demo.tetrate.io/proxy/app-b.ns-b/proxy/app-c.ns-c\"" ;
+  print_info "MTLS Traffic to Application DEF through Tier1 in mgmt cluster" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-mtls.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-key.pem --url \"https://def-https.demo.tetrate.io/proxy/app-e.ns-e/proxy/ifconfig.me\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-mtls.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-key.pem --url \"https://def-https.demo.tetrate.io/proxy/app-f.ns-f/proxy/ifconfig.me\"" ;
   echo ;
+
+  # echo ;
+  # echo "HTTP Traffic to Application ABC through Ingress in active cluster" ;
+  # print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"abc.demo.tetrate.io:80:${appabc_ingress_ip}\" --url \"http://abc.demo.tetrate.io/proxy/app-b.ns-b/proxy/app-c.ns-c\"" ;
+  # echo ;
+  # echo "HTTPS Traffic to Application ABC through Ingress in active cluster" ;
+  # print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"abc-https.demo.tetrate.io:443:${appabc_ingress_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://abc-https.demo.tetrate.io/proxy/app-b.ns-b/proxy/app-c.ns-c\"" ;
+  # echo ;
+  # echo "MTLS Traffic to Application ABC through Ingress in active cluster" ;
+  # print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"abc-mtls.demo.tetrate.io:443:${appabc_ingress_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/abc-mtls/client.abc-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/abc-mtls/client.abc-mtls.demo.tetrate.io-key.pem --url \"https://abc-mtls.demo.tetrate.io/proxy/app-b.ns-b/proxy/app-c.ns-c\"" ;
+  # echo ;
 
   exit 0 ;
 fi
