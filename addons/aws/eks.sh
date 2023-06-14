@@ -126,9 +126,26 @@ function delete_all_els_lbs {
   [[ -z "${2}" ]] && print_error "Please provide cluster region configuration as 2nd argument" && return 2 || local cluster_region="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide kubeconfig file as 3rd argument" && return 2 || local kubeconfig_file="${3}" ;
 
-  # Use the public DNS/Hostname of the LB to determine the name/arn to delete
-  for lb_dns in $(kubectl --kubeconfig ${kubeconfig_file} get svc -A  | grep "LoadBalancer" | awk '{print $5}') ; do
-    # Classic Type LB
+  # First delete all the operators so services are not being recreated
+  for namespace in $(kubectl --kubeconfig ${kubeconfig_file} get namespaces -o custom-columns=:metadata.name) ; do
+    for operator in $(kubectl --kubeconfig ${kubeconfig_file} get deployments -n ${namespace} -o custom-columns=:metadata.name | grep operator); do
+      kubectl --kubeconfig ${kubeconfig_file} delete deployment ${operator} -n ${namespace} --timeout=10s --wait=false ;
+      sleep 0.5 ;
+    done
+  done
+
+  # Use the public DNS/Hostname of the loadbalancer to determine the name/arn to delete
+  kubectl --kubeconfig ${kubeconfig_file} get svc -A | grep "LoadBalancer" \
+    | awk '{print "lb_namespace=" $1 " ; lb_service=" $2 " ; lb_dns=" $5 }' \
+    | while read set_vars ; do 
+  
+    eval ${set_vars} ;
+  
+    # Delete kubernetes service object to prevent loadbalancer recreation
+    echo "Delete kubernetes service '${lb_service}' of type loadbalancer in namespace '${lb_namespace}'"
+    kubectl --kubeconfig ${kubeconfig_file} delete svc ${lb_service} -n ${lb_namespace} ;
+
+    # Delete classic Type LB
     lb_name=$(aws elb describe-load-balancers --profile "${aws_profile}" \
                     --query "LoadBalancerDescriptions[?DNSName=='${lb_dns}']|[].LoadBalancerName" \
                     --region "${cluster_region}" --output text 2>/dev/null) ;
@@ -137,7 +154,8 @@ function delete_all_els_lbs {
       aws elb delete-load-balancer --load-balancer-name "${lb_name}" --profile "${aws_profile}" --region "${cluster_region}" ;
       continue ;
     fi
-    # New Type LB (eg Network)
+
+    #  Delete new Type LB (eg Network)
     lb_arn=$(aws elbv2 describe-load-balancers --profile "${aws_profile}" \
                     --query "LoadBalancers[?DNSName=='${lb_dns}']|[].LoadBalancerArn" \
                     --region "${cluster_region}" --output text 2>/dev/null) ;
@@ -146,6 +164,7 @@ function delete_all_els_lbs {
       aws elbv2 delete-load-balancer --load-balancer-arn "${lb_arn}" --profile "${aws_profile}" --region "${cluster_region}" ;
       continue ;
     fi
+
     print_warning "Did not find a matching LoadBalancer (classic or new type) for DNS '${lb_dns}' in region '${cluster_region}'" ;
   done
 }
