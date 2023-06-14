@@ -104,7 +104,7 @@ function install_tsb_mp {
   #   Error: unable to connect to TSB at xyz:8443: time out trying to connection to TSB at xyz:8443
   while [[ $? != 0 ]]; do
     print_warning "Running 'tctl install demo' another time due to AWS LB timeout"
-    KUBECONFIG=${mp_cluster_kubeconfig} pwddddtctl install demo --cluster ${mp_cluster_name} --registry ${ecr_repository_url} --admin-password admin ;
+    KUBECONFIG=${mp_cluster_kubeconfig} tctl install demo --cluster ${mp_cluster_name} --registry ${ecr_repository_url} --admin-password admin ;
   done
 
   # Wait for the management, control and data plane to become available
