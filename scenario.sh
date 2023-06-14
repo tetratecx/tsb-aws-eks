@@ -181,14 +181,20 @@ if [[ ${ACTION} = "info" ]]; then
   print_info "HTTP Traffic to Application DEF through Tier1 in mgmt cluster" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def.demo.tetrate.io:80:${appdef_tier1_ip}\" --url \"http://def.demo.tetrate.io/proxy/app-e.ns-e/proxy/ifconfig.me\"" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def.demo.tetrate.io:80:${appdef_tier1_ip}\" --url \"http://def.demo.tetrate.io/proxy/app-f.ns-f/proxy/ifconfig.me\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def.demo.tetrate.io:80:${appdef_tier1_ip}\" --url \"http://def.demo.tetrate.io/proxy/app-e.ns-e/proxy/ipinfo.io\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def.demo.tetrate.io:80:${appdef_tier1_ip}\" --url \"http://def.demo.tetrate.io/proxy/app-f.ns-f/proxy/ipinfo.io\"" ;
   echo ;
   print_info "HTTPS Traffic to Application DEF through Tier1 in mgmt cluster" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-https.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://def-https.demo.tetrate.io/proxy/app-e.ns-e/proxy/ifconfig.me\"" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-https.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://def-https.demo.tetrate.io/proxy/app-f.ns-f/proxy/ifconfig.me\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-https.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://def-https.demo.tetrate.io/proxy/app-e.ns-e/proxy/ipinfo.io\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-https.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://def-https.demo.tetrate.io/proxy/app-f.ns-f/proxy/ipinfo.io\"" ;
   echo ;
   print_info "MTLS Traffic to Application DEF through Tier1 in mgmt cluster" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-mtls.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-key.pem --url \"https://def-https.demo.tetrate.io/proxy/app-e.ns-e/proxy/ifconfig.me\"" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-mtls.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-key.pem --url \"https://def-https.demo.tetrate.io/proxy/app-f.ns-f/proxy/ifconfig.me\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-mtls.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-key.pem --url \"https://def-https.demo.tetrate.io/proxy/app-e.ns-e/proxy/ipinfo.io\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-mtls.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-key.pem --url \"https://def-https.demo.tetrate.io/proxy/app-f.ns-f/proxy/ipinfo.io\"" ;
   echo ;
 
   # echo ;
