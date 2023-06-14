@@ -130,18 +130,18 @@ function delete_all_els_lbs {
   for lb_dns in $(kubectl --kubeconfig ${kubeconfig_file} get svc -A  | grep "LoadBalancer" | awk '{print $5}') ; do
     # Classic Type LB
     lb_name=$(aws elb describe-load-balancers --profile "${aws_profile}" \
-                    --query "LoadBalancerDescriptions[?contains(DNSName, '${lb_dns}')]" \
-                    --region "${cluster_region}" | jq -r ".[0].LoadBalancerName" 2>/dev/null) ;
-    if [[ "${lb_name}" != "null" ]]; then
+                    --query "LoadBalancerDescriptions[?DNSName=='${lb_dns}']|[].LoadBalancerName" \
+                    --region "${cluster_region}" --output text 2>/dev/null) ;
+    if [[ ! -z "${lb_name}" ]]; then
       echo "Delete classic type loadbalancer with name '${lb_name}' in region '${cluster_region}'" ;
       aws elb delete-load-balancer --load-balancer-name "${lb_name}" --profile "${aws_profile}" --region "${cluster_region}" ;
       continue ;
     fi
     # New Type LB (eg Network)
     lb_arn=$(aws elbv2 describe-load-balancers --profile "${aws_profile}" \
-                    --query "LoadBalancers[?contains(DNSName, '${lb_dns}')]" \
-                    --region "${cluster_region}" | jq -r ".[0].LoadBalancerArn" 2>/dev/null) ;
-    if [[ "${lb_arn}" != "null" ]]; then
+                    --query "LoadBalancers[?DNSName=='${lb_dns}']|[].LoadBalancerArn" \
+                    --region "${cluster_region}" --output text 2>/dev/null) ;
+    if [[ ! -z "${lb_arn}" ]]; then
       echo "Delete new type loadbalancer with arn '${lb_arn}' in region '${cluster_region}'" ;
       aws elbv2 delete-load-balancer --load-balancer-arn "${lb_arn}" --profile "${aws_profile}" --region "${cluster_region}" ;
       continue ;
