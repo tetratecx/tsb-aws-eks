@@ -116,14 +116,14 @@ function wait_eks_cloudformation_stacks_deleted {
   echo "DONE" ;
 }
 
-# Clean up aws loadbalancer created by kubernetes services of type loadbalancer
+# Clean up eks attached aws loadbalancers created by kubernetes services of type loadbalancer
 #   args:
 #     (1) aws profile
 #     (2) cluster region
 #     (3) kubeconfig file
-function delete_all_els_lbs {
+function delete_all_eks_lbs {
   [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
-  [[ -z "${2}" ]] && print_error "Please provide cluster region configuration as 2nd argument" && return 2 || local cluster_region="${2}" ;
+  [[ -z "${2}" ]] && print_error "Please provide cluster region as 2nd argument" && return 2 || local cluster_region="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide kubeconfig file as 3rd argument" && return 2 || local kubeconfig_file="${3}" ;
 
   # First delete all the operators so services are not being recreated

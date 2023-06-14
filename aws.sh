@@ -105,7 +105,7 @@ if [[ ${ACTION} = "down" ]]; then
     cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
 
     print_info "Delete all loadbalancers of cluster '${cluster_name}' in region '${cluster_region}'" ;
-    delete_all_els_lbs "${AWS_PROFILE}" "${cluster_region}" "${cluster_kubeconfig}" ;
+    delete_all_eks_lbs "${AWS_PROFILE}" "${cluster_region}" "${cluster_kubeconfig}" ;
 
     print_info "Delete eks cluster '${cluster_name}' in region '${cluster_region}'" ;
     delete_eks_cluster "${ROOT_DIR}" "${AWS_PROFILE}" "$(jq -r '.eks.clusters['${cluster_index}']' ${AWS_ENV_FILE})" &
