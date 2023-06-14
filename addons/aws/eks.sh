@@ -115,3 +115,37 @@ function wait_eks_cloudformation_stacks_deleted {
   done
   echo "DONE" ;
 }
+
+# Clean up aws loadbalancer created by kubernetes services of type loadbalancer
+#   args:
+#     (1) aws profile
+#     (2) cluster region
+#     (3) kubeconfig file
+function delete_all_els_lbs {
+  [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide cluster region configuration as 2nd argument" && return 2 || local cluster_region="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide kubeconfig file as 3rd argument" && return 2 || local kubeconfig_file="${3}" ;
+
+  # Use the public DNS/Hostname of the LB to determine the name/arn to delete
+  for lb_dns in $(kubectl --kubeconfig ${kubeconfig_file} get svc -A  | grep "LoadBalancer" | awk '{print $5}') ; do
+    # Classic Type LB
+    lb_name=$(aws elb describe-load-balancers --profile "${aws_profile}" \
+                    --query "LoadBalancerDescriptions[?contains(DNSName, '${lb_dns}')]" \
+                    --region "${cluster_region}" | jq -r ".[0].LoadBalancerName" 2>/dev/null) ;
+    if [[ "${lb_name}" != "null" ]]; then
+      echo "Delete classic type loadbalancer with name '${lb_name}' in region '${cluster_region}'" ;
+      aws elb delete-load-balancer --load-balancer-name "${lb_name}" --profile "${aws_profile}" --region "${cluster_region}" ;
+      continue ;
+    fi
+    # New Type LB (eg Network)
+    lb_arn=$(aws elbv2 describe-load-balancers --profile "${aws_profile}" \
+                    --query "LoadBalancers[?contains(DNSName, '${lb_dns}')]" \
+                    --region "${cluster_region}" | jq -r ".[0].LoadBalancerArn" 2>/dev/null) ;
+    if [[ "${lb_arn}" != "null" ]]; then
+      echo "Delete new type loadbalancer with arn '${lb_arn}' in region '${cluster_region}'" ;
+      aws elbv2 delete-load-balancer --load-balancer-arn "${lb_arn}" --profile "${aws_profile}" --region "${cluster_region}" ;
+      continue ;
+    fi
+    print_warning "Did not find a matching LoadBalancer (classic or new type) for DNS '${lb_dns}' in region '${cluster_region}'" ;
+  done
+}

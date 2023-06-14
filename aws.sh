@@ -12,28 +12,6 @@ AWS_RESOURCE_PREFIX=$(cat ${AWS_ENV_FILE} | jq -r ".resource_prefix") ;
 
 ACTION=${1} ;
 
-# Delete all kubernetes services of type LoadBalancer to clean aws loadbalancer
-#   args:
-#     (1) kubeconfig file
-#
-function delete_all_lb_services {
-  [[ -z "${1}" ]] && print_error "Please provide kubeconfig file as 1st argument" && return 2 || local kubeconfig_file="${1}" ;
-
-  # First delete the operators so new services aren't being recreated
-  for namespace in tsb istio-system istio-gateway xcp-multicluster cert-manager ; do
-    kubectl --kubeconfig ${kubeconfig_file} get deployments -n ${namespace} -o custom-columns=:metadata.name \
-      | grep operator | xargs -I {} kubectl --kubeconfig ${kubeconfig_file} delete deployment {} -n ${namespace} --timeout=10s --wait=false ;
-    sleep 1 ;
-  done
-
-  # Delete all service of type loadbalancer
-  kubectl --kubeconfig ${kubeconfig_file} get svc -A \
-    | grep "LoadBalancer" \
-    | awk "{print \"kubectl --kubeconfig ${kubeconfig_file} delete service \" $2 \" --namespace \" $1}" \
-    | while read kubectl_command ; do eval ${kubectl_command} ; done
-}
-
-
 if [[ ${ACTION} = "login" ]]; then
 
   if ! $(aws sts get-caller-identity --profile ${AWS_PROFILE} &>/dev/null); then
@@ -89,7 +67,6 @@ if [[ ${ACTION} = "up" ]]; then
       --profile "${AWS_PROFILE}" \
       --region "${cluster_region}" ;
 
-
     if cluster_info_out=$(kubectl cluster-info --kubeconfig "${ROOT_DIR}/${cluster_kubeconfig}" 2>&1); then
       print_info "EKS cluster '${cluster_name}' running correctly in region '${cluster_region}'" ;
       print_info "EKS cluster '${cluster_name}' kubeconfig file: ${ROOT_DIR}/${cluster_kubeconfig}" ;
@@ -127,8 +104,9 @@ if [[ ${ACTION} = "down" ]]; then
     cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
     cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
 
-    print_info "Delete all services of type loadbalancer of cluster '${cluster_name}' in region '${cluster_region}'" ;
-    delete_all_lb_services "${cluster_kubeconfig}" ;
+    print_info "Delete all loadbalancers of cluster '${cluster_name}' in region '${cluster_region}'" ;
+    delete_all_els_lbs "${AWS_PROFILE}" "${cluster_region}" "${cluster_kubeconfig}" ;
+
     print_info "Delete eks cluster '${cluster_name}' in region '${cluster_region}'" ;
     delete_eks_cluster "${ROOT_DIR}" "${AWS_PROFILE}" "$(jq -r '.eks.clusters['${cluster_index}']' ${AWS_ENV_FILE})" &
     eksctl_pids[${cluster_index}]=$! ;
