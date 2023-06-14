@@ -107,7 +107,7 @@ function registry_wait_api_ready {
   [[ -z "${2}" ]] && local timeout="120" || local timeout="${2}" ;
 
   local count=0 ;
-  echo -n "Waiting for registry rest api to become ready at url '${base_api_url}': "
+  echo -n "Waiting for registry rest api to become ready at url '${base_api_url}': " ;
 
   while ! $(registry_get_catalog "${base_api_url}" &>/dev/null); do
     echo -n "." ; sleep 1 ; count=$((count+1)) ;
