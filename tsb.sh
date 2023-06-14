@@ -102,7 +102,9 @@ function install_tsb_mp {
 
   # We do this a second time, because aws loadbalancer status causes consistent failure the first time
   #   Error: unable to connect to TSB at xyz:8443: time out trying to connection to TSB at xyz:8443
-  KUBECONFIG=${mp_cluster_kubeconfig} tctl install demo --cluster ${mp_cluster_name} --registry ${ecr_repository_url} --admin-password admin ;
+  if [[ $? != 0 ]]; then
+    KUBECONFIG=${mp_cluster_kubeconfig} tctl install demo --cluster ${mp_cluster_name} --registry ${ecr_repository_url} --admin-password admin ;
+  fi
 
   # Wait for the management, control and data plane to become available
   kubectl --kubeconfig ${mp_cluster_kubeconfig} wait deployment -n tsb tsb-operator-management-plane --for condition=Available=True --timeout=600s ;
