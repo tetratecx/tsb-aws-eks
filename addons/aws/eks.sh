@@ -87,7 +87,7 @@ function delete_eks_cluster {
   eksctl delete cluster \
     --name "${cluster_name}" \
     --profile "${aws_profile}" \
-    --region "${cluster_region}" ;
+    --region "${cluster_region}" 2>/dev/null ;
   rm -f "${base_dir}/${cluster_kubeconfig}" ;
 }
 
@@ -133,6 +133,11 @@ function delete_all_eks_lbs {
   [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide cluster region as 2nd argument" && return 2 || local cluster_region="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide kubeconfig file as 3rd argument" && return 2 || local kubeconfig_file="${3}" ;
+
+  if [[ ! -f ${kubeconfig_file} ]]; then
+    print_warning "Cannot find kubeconfig file '${kubeconfig_file}'"
+    return
+  fi
 
   # First delete all the operators so services are not being recreated
   for namespace in $(kubectl --kubeconfig ${kubeconfig_file} get namespaces -o custom-columns=:metadata.name) ; do

@@ -84,5 +84,5 @@ function delete_iamserviceaccount {
     --name "ebs-csi-controller-sa" \
     --namespace "kube-system" \
     --profile "${aws_profile}" \
-    --region "${cluster_region}" ;
+    --region "${cluster_region}" 2>/dev/null ;
 }
