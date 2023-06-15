@@ -9,9 +9,9 @@ help: ## This help
 .DEFAULT_GOAL := help
 
 .PHONY: up info down
-up: eks-up addons-deploy tsb-install scenario-deploy ## Bring up full demo scenario
+up: aws-up addons-deploy tsb-install scenario-deploy ## Bring up full demo scenario
 info: aws-info addons-info tsb-info scenario-info ## Get demo setup information
-down: awscli-login eks-down ## Bring down full demo scenario
+down: aws-down ## Bring down full demo scenario
 
 
 .PHONY: prereq-check
