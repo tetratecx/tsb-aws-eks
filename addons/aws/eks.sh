@@ -104,12 +104,12 @@ function wait_eks_cloudformation_stacks_deleted {
   [[ -z "${4}" ]] && local timeout="600" || local timeout="${4}" ;
 
   local count=0 ;
-  echo -n "Waiting for DELETE_IN_PROGRESS cloudstacks of cluster '${cluster_name}' in region '${cluster_region}'" ;
+  echo -n "Waiting for DELETE_IN_PROGRESS cloudstacks of cluster '${cluster_name}' in region '${cluster_region}':" ;
   while [[ ! -z $(aws cloudformation list-stacks --region "${cluster_region}" --stack-status-filter "DELETE_IN_PROGRESS" --query "StackSummaries[?contains(StackName, 'eksctl-${cluster_name}')]|[].StackName" --output text) ]]; do
     echo -n "." ; sleep 1 ; count=$((count+1)) ;
     if [[ ${count} -ge ${timeout} ]] ; then print_error "Timeout (${timeout}) exceeded while waiting for cloudformation stacks of cluster '${cluster_name}' in region '${cluster_region}'" ; break ; fi
   done
-  echo DONE ;
+  echo "DONE" ;
 
   echo "Check for DELETE_FAILED cloudstacks of cluster '${cluster_name}' in region '${cluster_region}'" ;
   for stackname in $(aws cloudformation list-stacks --region "${cluster_region}" --stack-status-filter "DELETE_FAILED" --query "StackSummaries[?contains(StackName, 'eksctl-${cluster_name}')]|[].StackName" --output text) ; do
