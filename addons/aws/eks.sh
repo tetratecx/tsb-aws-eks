@@ -151,7 +151,7 @@ function delete_all_eks_lbs {
   
     # Delete kubernetes service object to prevent loadbalancer recreation
     echo "Delete kubernetes service '${lb_service}' of type loadbalancer in namespace '${lb_namespace}'"
-    kubectl --kubeconfig ${kubeconfig_file} delete svc ${lb_service} -n ${lb_namespace} ;
+    kubectl --kubeconfig ${kubeconfig_file} delete svc ${lb_service} -n ${lb_namespace} 2>/dev/null ;
 
     # Delete classic Type LB
     lb_name=$(aws elb describe-load-balancers --profile "${aws_profile}" \
