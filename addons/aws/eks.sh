@@ -96,24 +96,32 @@ function delete_eks_cluster {
 #     (1) aws profile
 #     (2) cluster region
 #     (3) cluster name
-#     (4) timeout in seconds (optional, default '300')
+#     (4) timeout in seconds (optional, default '600')
 function wait_eks_cloudformation_stacks_deleted {
   [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide cluster region configuration as 2nd argument" && return 2 || local cluster_region="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide cluster name as 3rd argument" && return 2 || local cluster_name="${3}" ;
-  [[ -z "${4}" ]] && local timeout="300" || local timeout="${4}" ;
+  [[ -z "${4}" ]] && local timeout="600" || local timeout="${4}" ;
 
   local count=0 ;
-  echo -n "Waiting for eks related cloudformation stacks of cluster '${cluster_name}' in region '${cluster_region}' to be fully deleted: " ;
-  while [[ $(aws cloudformation list-stacks \
-    --profile "${aws_profile}" \
-    --query "StackSummaries[?contains(StackName, '${cluster_name}')]" \
-    --region "${cluster_region}" \
-    --stack-status-filter "DELETE_IN_PROGRESS" "DELETE_FAILED" | jq '. | length') != "0" ]]; do
+  echo -n "Waiting for DELETE_IN_PROGRESS cloudstacks of cluster '${cluster_name}' in region '${cluster_region}'" ;
+  while [[ ! -z $(aws cloudformation list-stacks --region "${cluster_region}" --stack-status-filter "DELETE_IN_PROGRESS" --query "StackSummaries[?contains(StackName, 'eksctl-${cluster_name}')]|[].StackName" --output text) ]]; do
     echo -n "." ; sleep 1 ; count=$((count+1)) ;
-    if [[ ${count} -ge ${timeout} ]] ; then print_error "Timeout exceeded while waiting for cloudformation stacks of cluster '${cluster_name}' in region '${cluster_region}' to be fully deleted" ; return 1 ; fi
+    if [[ ${count} -ge ${timeout} ]] ; then print_error "Timeout (${timeout}) exceeded while waiting for cloudformation stacks of cluster '${cluster_name}' in region '${cluster_region}'" ; break ; fi
   done
-  echo "DONE" ;
+  echo DONE ;
+
+  echo "Check for DELETE_FAILED cloudstacks of cluster '${cluster_name}' in region '${cluster_region}'" ;
+  for stackname in $(aws cloudformation list-stacks --region "${cluster_region}" --stack-status-filter "DELETE_FAILED" --query "StackSummaries[?contains(StackName, 'eksctl-${cluster_name}')]|[].StackName" --output text) ; do
+    print_error "Failed to delete stack '${stackname}' in region '${cluster_region}'. Please cleanup manually!" ;
+  done
+
+  stacklist=$(aws cloudformation list-stacks --region "${cluster_region}" --stack-status-filter "DELETE_IN_PROGRESS" "DELETE_FAILED" --query "StackSummaries[?contains(StackName, 'eksctl-${cluster_name}')]|[].StackName" --output text) ;
+  if [[ -z ${stacklist} ]]; then
+    print_info "Successfully removed all cloudstacks of cluster '${cluster_name}' in region '${cluster_region}'" ;
+  else
+    print_error "Failed to remove all cloudstacks of cluster '${cluster_name}' in region '${cluster_region}': ${stacklist}" ;
+  fi
 }
 
 # Clean up eks attached aws loadbalancers created by kubernetes services of type loadbalancer
