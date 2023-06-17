@@ -25,11 +25,11 @@ function tsb_mp_deploy {
   [[ -z "${2}" ]] && print_error "Please provide container registry as 2nd argument" && return 2 || local container_registry="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide tsb version as 3rd argument" && return 2 || local tsb_version="${3}" ;
   [[ -z "${4}" ]] && print_error "Please provide tsb organization as 4th argument" && return 2 || local tsb_org="${4}" ;
-  [[ -z "${5}" ]] && print_error "Please provide tsb gui certificate file as 4th argument" && return 2 || local tsb_gui_cert_file="${5}" ;
-  [[ -z "${6}" ]] && print_error "Please provide tsb gui key file as 4th argument" && return 2 || local tsb_gui_key_file="${6}" ;
-  [[ -z "${7}" ]] && print_error "Please provide tsb xcp central certificate file as 4th argument" && return 2 || local xcp_central_cert_file="${7}" ;
-  [[ -z "${8}" ]] && print_error "Please provide xcp central key file as 4th argument" && return 2 || local xcp_central_key_file="${8}" ;
-  [[ -z "${9}" ]] && print_error "Please provide root ca certificate file as 4th argument" && return 2 || local root_ca_cert_file="${9}" ;
+  [[ -z "${5}" ]] && print_error "Please provide tsb gui certificate file as 5th argument" && return 2 || local tsb_gui_cert_file="${5}" ;
+  [[ -z "${6}" ]] && print_error "Please provide tsb gui key file as 6th argument" && return 2 || local tsb_gui_key_file="${6}" ;
+  [[ -z "${7}" ]] && print_error "Please provide tsb xcp central certificate file as 7th argument" && return 2 || local xcp_central_cert_file="${7}" ;
+  [[ -z "${8}" ]] && print_error "Please provide xcp central key file as 8th argument" && return 2 || local xcp_central_key_file="${8}" ;
+  [[ -z "${9}" ]] && print_error "Please provide root ca certificate file as 9th argument" && return 2 || local root_ca_cert_file="${9}" ;
   [[ -z "${10}" ]] && local namespace="${TSB_NAMESPACE}" || local namespace="${10}" ;
   [[ -z "${11}" ]] && local envoy_https_port="${ENVOY_HTTPS_PORT}" || local envoy_https_port="${11}" ;
 
