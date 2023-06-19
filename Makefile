@@ -9,7 +9,7 @@ help: ## This help
 .DEFAULT_GOAL := help
 
 .PHONY: up info down
-up: aws-up addons-deploy tsb-install scenario-deploy ## Bring up full demo scenario
+up: aws-up addons-deploy tsb-deploy scenario-deploy ## Bring up full demo scenario
 info: aws-info addons-info tsb-info scenario-info ## Get demo setup information
 down: aws-down ## Bring down full demo scenario
 
@@ -50,13 +50,13 @@ addons-undeploy: ## Undeploy cluster addons (argcocd, gitea)
 addons-info: ## Get cluster addons information (argcocd, gitea)
 	@/bin/sh -c './addons.sh info'
 
-.PHONY: tsb-install
-tsb-install: prereq-check ## Install tsb mp and cp
-	@/bin/sh -c './tsb.sh install'
+.PHONY: tsb-deploy
+tsb-deploy: prereq-check ## Deploy tsb mp and cp
+	@/bin/sh -c './tsb.sh deploy'
 
-.PHONY: tsb-uninstall
-tsb-uninstall: ## Uninstall tsb mp and cp
-	@/bin/sh -c './tsb.sh uninstall'
+.PHONY: tsb-undeploy
+tsb-undeploy: ## Undeploy tsb mp and cp
+	@/bin/sh -c './tsb.sh undeploy'
 
 .PHONY: tsb-info
 tsb-info: ## Get tsb information

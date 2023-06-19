@@ -1,4 +1,5 @@
 {
+  "api_user": "bart-api",
   "ecr": {
     "do_not_delete": true,
     "region": "eu-west-1",
@@ -7,7 +8,6 @@
   "eks": {
     "clusters": [
       {
-        "kubeconfig": "output/mgmt-kubeconfig.yaml",
         "name": "mgmt",
         "node_type": "m5.xlarge",
         "nodes_max": 5,
@@ -19,7 +19,6 @@
         "vpc_cidr": "10.10.0.0/16"
       },
       {
-        "kubeconfig": "output/active-kubeconfig.yaml",
         "name": "active",
         "node_type": "m5.xlarge",
         "nodes_max": 5,
@@ -31,7 +30,6 @@
         "vpc_cidr": "10.20.0.0/16"
       },
       {
-        "kubeconfig": "output/standby-kubeconfig.yaml",
         "name": "standby",
         "node_type": "m5.xlarge",
         "nodes_max": 5,

@@ -64,7 +64,7 @@ function docker_login_ecr {
 # Get ECR repository URL
 #   args:
 #     (1) aws profile
-#     (3) repository region
+#     (2) repository region
 function get_ecr_repository_url {
   [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide repository region as 2nd argument" && return 2 || local repo_region="${2}" ;

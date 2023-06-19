@@ -7,6 +7,7 @@ source ${ROOT_DIR}/addons/aws/eks.sh ;
 
 AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
 
+AWS_API_USER=$(cat ${AWS_ENV_FILE} | jq -r ".api_user") ;
 AWS_PROFILE=$(cat ${AWS_ENV_FILE} | jq -r ".profile") ;
 AWS_RESOURCE_PREFIX=$(cat ${AWS_ENV_FILE} | jq -r ".resource_prefix") ;
 
@@ -34,7 +35,7 @@ if [[ ${ACTION} = "up" ]]; then
 
   # Start eks clusters in parallel using eksctl in background task
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    start_eks_cluster "${ROOT_DIR}" "${AWS_PROFILE}" "${AWS_RESOURCE_PREFIX}" "$(jq -r '.eks.clusters['${cluster_index}']' ${AWS_ENV_FILE})" &
+    start_eks_cluster "${AWS_PROFILE}" "${AWS_RESOURCE_PREFIX}" "$(jq -r '.eks.clusters['${cluster_index}']' ${AWS_ENV_FILE})" &
     eksctl_pids[${cluster_index}]=$! ;
   done
 
@@ -56,23 +57,19 @@ if [[ ${ACTION} = "up" ]]; then
 
   # Verifying if clusters are successfully running and reachable
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
     cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
     cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
 
-    echo "Writing kubeconfig file for cluster '${cluster_name}' in region '${cluster_region}' to '${ROOT_DIR}/${cluster_kubeconfig}'" ;
-    eksctl utils write-kubeconfig \
-      --cluster "${cluster_name}" \
-      --kubeconfig "${ROOT_DIR}/${cluster_kubeconfig}" \
-      --profile "${AWS_PROFILE}" \
-      --region "${cluster_region}" ;
+    echo "Writing/updating kubeconfig context for cluster '${cluster_name}' in region '${cluster_region}'" ;
+    write_eks_cluster_context "${AWS_PROFILE}" "${cluster_name}" "${cluster_region}" ;
 
-    if cluster_info_out=$(kubectl cluster-info --kubeconfig "${ROOT_DIR}/${cluster_kubeconfig}" 2>&1); then
+    cluster_context=$(get_eks_cluster_context "${AWS_API_USER}" "${cluster_name}" "${cluster_region}") ;
+    if cluster_info_out=$(kubectl cluster-info --context "${cluster_context}" 2>&1); then
       print_info "EKS cluster '${cluster_name}' running correctly in region '${cluster_region}'" ;
-      print_info "EKS cluster '${cluster_name}' kubeconfig file: ${ROOT_DIR}/${cluster_kubeconfig}" ;
+      print_info "EKS cluster '${cluster_name}' kubeconfig context: ${cluster_context}" ;
     else
       print_error "EKS cluster '${cluster_name}' is not running correctly in region '${cluster_region}'" ;
-      print_error "EKS cluster '${cluster_name}' kubeconfig file: ${ROOT_DIR}/${cluster_kubeconfig}" ;
+      print_error "EKS cluster '${cluster_name}' kubeconfig context: ${cluster_context}" ;
       print_error "${cluster_info_out}" ;
     fi
   done
@@ -100,15 +97,15 @@ if [[ ${ACTION} = "down" ]]; then
 
   # Delete eks clusters in parallel using eksctl in background task
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
     cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
     cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
 
     print_info "Delete all loadbalancers of cluster '${cluster_name}' in region '${cluster_region}'" ;
-    delete_all_eks_lbs "${AWS_PROFILE}" "${cluster_region}" "${cluster_kubeconfig}" ;
+    cluster_context=$(get_eks_cluster_context "${AWS_API_USER}" "${cluster_name}" "${cluster_region}") ;
+    delete_all_eks_lbs "${AWS_PROFILE}" "${cluster_region}" "${cluster_context}" ;
 
     print_info "Delete eks cluster '${cluster_name}' in region '${cluster_region}'" ;
-    delete_eks_cluster "${ROOT_DIR}" "${AWS_PROFILE}" "$(jq -r '.eks.clusters['${cluster_index}']' ${AWS_ENV_FILE})" &
+    delete_eks_cluster "${AWS_PROFILE}" "${cluster_name}" "${cluster_region}" &
     eksctl_pids[${cluster_index}]=$! ;
   done
 
@@ -127,7 +124,7 @@ if [[ ${ACTION} = "down" ]]; then
     cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
 
     print_info "Waiting for eks related cloudformation stacks of cluster '${cluster_name}' in region '${cluster_region}' to be deleted" ;
-    wait_eks_cloudformation_stacks_deleted "${AWS_PROFILE}" "${cluster_region}" "${cluster_name}" ;
+    wait_eks_cloudformation_stacks_deleted "${AWS_PROFILE}" "${cluster_name}" "${cluster_region}" ;
   done
 
   # Delete TSB ECR image repositories (if do_not_delete not set to true)
@@ -147,13 +144,13 @@ if [[ ${ACTION} = "info" ]]; then
  
   cluster_count=$(jq '.eks.clusters | length' ${AWS_ENV_FILE}) ;
   for ((cluster_index=0; cluster_index<${cluster_count}; cluster_index++)); do
-    cluster_kubeconfig=$(jq -r '.eks.clusters['${cluster_index}'].kubeconfig' ${AWS_ENV_FILE}) ;
     cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
     cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
+    cluster_context=$(get_eks_cluster_context "${AWS_API_USER}" "${cluster_name}" "${cluster_region}") ;
 
     print_info "AWS EKS cluster '${cluster_name}' in region '${cluster_name}'" ;
-    print_command "kubectl --kubeconfig ${cluster_kubeconfig} cluster-info" ;
-    kubectl --kubeconfig ${cluster_kubeconfig} cluster-info ;
+    print_command "kubectl --context ${cluster_context} cluster-info" ;
+    kubectl --context ${cluster_context} cluster-info ;
     echo
   done
 

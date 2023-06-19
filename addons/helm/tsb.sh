@@ -1,4 +1,4 @@
-# Helper functions to manage tsb management and control plane
+# Helper functions to manage tsb management and control plane using helm
 #   Docs:
 #     - https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/requirements-and-download 
 #     - https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/helm/managementplane
@@ -9,7 +9,7 @@ TSB_NAMESPACE="tsb"
 
 # Deploy tsb management plane in kubernetes using helm
 #   args:
-#     (1) kubeconfig file
+#     (1) kubeconfig cluster context
 #     (2) container registry
 #     (3) tsb version
 #     (4) tsb organization
@@ -20,8 +20,8 @@ TSB_NAMESPACE="tsb"
 #     (9) root ca certificate file
 #     (10) namespace (optional, default 'tsb')
 #     (11) tsb https port (optional, default '443')
-function tsb_mp_deploy {
-  [[ -z "${1}" ]] && print_error "Please provide kubeconfig file as 1st argument" && return 2 || local kubeconfig="${1}" ;
+function tsb_mp_helm_deploy {
+  [[ -z "${1}" ]] && print_error "Please provide kubeconfig cluster context as 1st argument" && return 2 || local cluster_context="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide container registry as 2nd argument" && return 2 || local container_registry="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide tsb version as 3rd argument" && return 2 || local tsb_version="${3}" ;
   [[ -z "${4}" ]] && print_error "Please provide tsb organization as 4th argument" && return 2 || local tsb_org="${4}" ;
@@ -36,9 +36,9 @@ function tsb_mp_deploy {
   helm repo add tetrate-tsb-charts 'https://charts.dl.tetrate.io/public/helm/charts/' ;
   helm repo update ;
 
-  if $(helm status tsb-mp --kubeconfig "${kubeconfig}" --namespace "${namespace}" &>/dev/null); then
+  if $(helm status tsb-mp --kube-context "${cluster_context}" --namespace "${namespace}" &>/dev/null); then
     helm upgrade tsb-mp tetrate-tsb-charts/managementplane \
-      --kubeconfig "${kubeconfig}" \
+      --kube-context "${cluster_context}" \
       --namespace "${namespace}" \
       --set image.registry=${container_registry} \
       --set image.tag=${tsb_version} \
@@ -60,7 +60,7 @@ function tsb_mp_deploy {
   else
     helm install tsb-mp tetrate-tsb-charts/managementplane \
       --create-namespace \
-      --kubeconfig "${kubeconfig}" \
+      --kube-context "${cluster_context}" \
       --namespace "${namespace}" \
       --set image.registry=${container_registry} \
       --set image.tag=${tsb_version} \
@@ -85,14 +85,14 @@ function tsb_mp_deploy {
 
 # Undeploy tsb management plane from kubernetes using helm
 #   args:
-#     (1) kubeconfig file
+#     (1) kubeconfig cluster context
 #     (2) namespace (optional, default 'tsb')
-function registry_undeploy {
-  [[ -z "${1}" ]] && print_error "Please provide kubeconfig file as 1st argument" && return 2 || local kubeconfig="${1}" ;
+function registry_helm_undeploy {
+  [[ -z "${1}" ]] && print_error "Please provide kubeconfig cluster context as 1st argument" && return 2 || local cluster_context="${1}" ;
   [[ -z "${2}" ]] && local namespace="${TSB_NAMESPACE}" || local namespace="${2}" ;
 
   helm uninstall tsb-mp \
-    --kubeconfig "${kubeconfig}" \
+    --kube-context "${cluster_context}" \
     --namespace "${namespace}" ;
   print_info "Uninstalled helm chart for tsb-mp" ;
 }

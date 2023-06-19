@@ -2,16 +2,42 @@
 #
 
 
+# Get eks kubeconfig cluster context
+#   args:
+#     (1) aws api user
+#     (2) cluster name
+#     (3) cluster region
+function get_eks_cluster_context {
+  [[ -z "${1}" ]] && print_error "Please provide aws api user as 1st argument" && return 2 || local api_user="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide cluster name as 2nd argument" && return 2 || local cluster_name="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide cluster region as 3rd argument" && return 2 || local cluster_region="${3}" ;
+  echo "${api_user}@${cluster_name}.${cluster_region}.eksctl.io" ;
+}
+
+# Write eks kubeconfig cluster context
+#   args:
+#     (1) aws profile
+#     (2) cluster name
+#     (3) cluster region
+function write_eks_cluster_context {
+  [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide cluster name as 2nd argument" && return 2 || local cluster_name="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide cluster region as 3rd argument" && return 2 || local cluster_region="${3}" ;
+
+  echo "Writing kubeconfig context for cluster '${cluster_name}' in region '${cluster_region}'" ;
+  eksctl utils write-kubeconfig \
+    --cluster "${cluster_name}" \
+    --profile "${aws_profile}" \
+    --region "${cluster_region}" ;
+}
 
 # Start an eks based kubernetes cluster
 #   args:
-#     (1) base directory (will prefix the kubeconfig output folder)
-#     (2) aws profile
-#     (3) aws resource prefix
-#     (4) cluster json configuration
+#     (1) aws profile
+#     (2) aws resource prefix
+#     (3) cluster json configuration
 #   example:
 #      {
-#        "kubeconfig": "output/active-kubeconfig.yaml",
 #        "name": "active",
 #        "node_type": "m5.xlarge",
 #        "nodes_max": 5,
@@ -24,12 +50,10 @@
 #      }
 #
 function start_eks_cluster {
-  [[ -z "${1}" ]] && print_error "Please provide base directory as 1st argument" && return 2 || local base_dir="${1}" ;
-  [[ -z "${2}" ]] && print_error "Please provide aws profile as 2nd argument" && return 2 || local aws_profile="${2}" ;
-  [[ -z "${3}" ]] && print_error "Please provide aws resource prefix as 3rd argument" && return 2 || local aws_prefix="${3}" ;
-  [[ -z "${4}" ]] && print_error "Please provide cluster json configuration as 4th argument" && return 2 || local json_config="${4}" ;
+  [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide aws resource prefix as 2nd argument" && return 2 || local aws_prefix="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide cluster json configuration as 3rd argument" && return 2 || local json_config="${3}" ;
 
-  local cluster_kubeconfig=$(echo ${json_config} | jq -r '.kubeconfig') ;
   local cluster_name=$(echo ${json_config} | jq -r '.name') ;
   local cluster_node_type=$(echo ${json_config} | jq -r '.node_type') ;
   local cluster_nodes_max=$(echo ${json_config} | jq -r '.nodes_max') ;
@@ -39,7 +63,7 @@ function start_eks_cluster {
   local cluster_version=$(echo ${json_config} | jq -r '.version') ;
   local cluster_vpc_cidr=$(echo ${json_config} | jq -r '.vpc_cidr') ;
 
-  if $(eksctl get cluster ${cluster_name} --region ${cluster_region} --profile "${aws_profile}" -o json | jq -r ".[].Status" | grep "ACTIVE" &>/dev/null); then
+  if $(eksctl get cluster ${cluster_name} --region ${cluster_region} --profile "${aws_profile}" -o json 2>/dev/null | jq -r ".[].Status" | grep "ACTIVE" &>/dev/null); then
     echo "EKS cluster '${cluster_name}' in region '${cluster_region}' already running" ;
   else
     echo "Create cluster '${cluster_name}' in region '${cluster_region}'" ;
@@ -47,7 +71,6 @@ function start_eks_cluster {
       --asg-access \
       --external-dns-access \
       --instance-prefix "${aws_prefix}" \
-      --kubeconfig "${base_dir}/${cluster_kubeconfig}" \
       --name "${cluster_name}" \
       --node-type "${cluster_node_type}" \
       --nodes ${cluster_nodes_min} \
@@ -64,43 +87,31 @@ function start_eks_cluster {
 
 # Delete an eks based kubernetes cluster
 #   args:
-#     (1) base directory (will prefix the kubeconfig output folder)
-#     (2) aws profile
-#     (3) cluster json configuration
-#   example:
-#      {
-#        "kubeconfig": "output/active-kubeconfig.yaml",
-#        "name": "active",
-#        "region": "eu-west-1",
-#      }
-#
+#     (1) aws profile
+#     (2) cluster name
+#     (3) cluster region
 function delete_eks_cluster {
-  [[ -z "${1}" ]] && print_error "Please provide base directory as 1st argument" && return 2 || local base_dir="${1}" ;
-  [[ -z "${2}" ]] && print_error "Please provide aws profile as 2nd argument" && return 2 || local aws_profile="${2}" ;
-  [[ -z "${3}" ]] && print_error "Please provide cluster json configuration as 3rd argument" && return 2 || local json_config="${3}" ;
-
-  local cluster_kubeconfig=$(echo ${json_config} | jq -r '.kubeconfig') ;
-  local cluster_name=$(echo ${json_config} | jq -r '.name') ;
-  local cluster_region=$(echo ${json_config} | jq -r '.region') ;
+  [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide cluster name as 2nd argument" && return 2 || local cluster_name="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide cluster region as 3rd argument" && return 2 || local cluster_region="${3}" ;
 
   echo "Delete cluster '${cluster_name}' in region '${cluster_region}'" ;
   eksctl delete cluster \
     --name "${cluster_name}" \
     --profile "${aws_profile}" \
     --region "${cluster_region}" 2>/dev/null ;
-  rm -f "${base_dir}/${cluster_kubeconfig}" ;
 }
 
 # Wait for eks related cloudformation stacks to be completely deleted
 #   args:
 #     (1) aws profile
-#     (2) cluster region
-#     (3) cluster name
+#     (2) cluster name
+#     (3) cluster region
 #     (4) timeout in seconds (optional, default '600')
 function wait_eks_cloudformation_stacks_deleted {
   [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
-  [[ -z "${2}" ]] && print_error "Please provide cluster region configuration as 2nd argument" && return 2 || local cluster_region="${2}" ;
-  [[ -z "${3}" ]] && print_error "Please provide cluster name as 3rd argument" && return 2 || local cluster_name="${3}" ;
+  [[ -z "${2}" ]] && print_error "Please provide cluster name as 2nd argument" && return 2 || local cluster_name="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide cluster region as 3rd argument" && return 2 || local cluster_region="${3}" ;
   [[ -z "${4}" ]] && local timeout="600" || local timeout="${4}" ;
 
   local count=0 ;
@@ -128,27 +139,28 @@ function wait_eks_cloudformation_stacks_deleted {
 #   args:
 #     (1) aws profile
 #     (2) cluster region
-#     (3) kubeconfig file
+#     (3) cluster context (kubeconfig)
 function delete_all_eks_lbs {
   [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide cluster region as 2nd argument" && return 2 || local cluster_region="${2}" ;
-  [[ -z "${3}" ]] && print_error "Please provide kubeconfig file as 3rd argument" && return 2 || local kubeconfig_file="${3}" ;
+  [[ -z "${3}" ]] && print_error "Please provide cluster context as 3rd argument" && return 2 || local cluster_context="${3}" ;
 
-  if [[ ! -f ${kubeconfig_file} ]]; then
-    print_warning "Cannot find kubeconfig file '${kubeconfig_file}'"
+  # Check if kubeconfig context still exists
+  if ! $(kubectl config get-contexts ${cluster_context} &>/dev/null) ; then
+    print_warning "Cannot find kubeconfig context '${cluster_context}'"
     return
   fi
 
   # First delete all the operators so services are not being recreated
-  for namespace in $(kubectl --kubeconfig ${kubeconfig_file} get namespaces -o custom-columns=:metadata.name) ; do
-    for operator in $(kubectl --kubeconfig ${kubeconfig_file} get deployments -n ${namespace} -o custom-columns=:metadata.name | grep operator); do
-      kubectl --kubeconfig ${kubeconfig_file} delete deployment ${operator} -n ${namespace} --timeout=10s --wait=false ;
+  for namespace in $(kubectl --context ${cluster_context} get namespaces -o custom-columns=:metadata.name) ; do
+    for operator in $(kubectl --context ${cluster_context} get deployments -n ${namespace} -o custom-columns=:metadata.name | grep operator); do
+      kubectl --context ${cluster_context} delete deployment ${operator} -n ${namespace} --timeout=10s --wait=false ;
       sleep 0.5 ;
     done
   done
 
   # Use the public DNS/Hostname of the loadbalancer to determine the name/arn to delete
-  kubectl --kubeconfig ${kubeconfig_file} get svc -A | grep "LoadBalancer" \
+  kubectl --context ${cluster_context} get svc -A | grep "LoadBalancer" \
     | awk '{print "lb_namespace=" $1 " ; lb_service=" $2 " ; lb_dns=" $5 }' \
     | while read set_vars ; do 
   
@@ -156,7 +168,7 @@ function delete_all_eks_lbs {
   
     # Delete kubernetes service object to prevent loadbalancer recreation
     echo "Delete kubernetes service '${lb_service}' of type loadbalancer in namespace '${lb_namespace}'"
-    kubectl --kubeconfig ${kubeconfig_file} delete svc ${lb_service} -n ${lb_namespace} 2>/dev/null ;
+    kubectl --context ${cluster_context} delete svc ${lb_service} -n ${lb_namespace} 2>/dev/null ;
 
     # Delete classic Type LB
     lb_name=$(aws elb describe-load-balancers --profile "${aws_profile}" \
