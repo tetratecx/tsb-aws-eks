@@ -1,0 +1,144 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: app-g
+    version: v1
+  name: app-g-v1
+  namespace: ns-g
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-g
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: app-g
+        version: v1
+    spec:
+      containers:
+        - args:
+            - '--log-output-level=all:debug'
+            - '--http-listen-address=:8000'
+            - '--tcp-listen-address=:3000'
+            - '--ep-duration=0'
+            - '--ep-errors=0'
+            - '--ep-headers=0'
+            - '--zipkin-reporter-endpoint=http://zipkin.istio-system.svc.cluster.local:9411/api/v2/spans'
+            - '--zipkin-sample-rate=1.0'
+            - '--zipkin-singlehost-spans'
+          env:
+            - name: SVCNAME
+              value: app-g
+          image: $ECR_REPO_URL/obs-tester-server:1.0
+          imagePullPolicy: IfNotPresent
+          name: obs-tester
+          ports:
+            - containerPort: 8000
+              name: http
+            - containerPort: 3000
+              name: tcp
+          resources:
+            limits:
+              cpu: 128m
+              memory: 64Mi
+      serviceAccountName: sa-app-g
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: app-h
+    version: v1
+  name: app-h-v1
+  namespace: ns-h
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-h
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: app-h
+        version: v1
+    spec:
+      containers:
+        - args:
+            - '--log-output-level=all:debug'
+            - '--http-listen-address=:8000'
+            - '--tcp-listen-address=:3000'
+            - '--ep-duration=0'
+            - '--ep-errors=0'
+            - '--ep-headers=0'
+            - '--zipkin-reporter-endpoint=http://zipkin.istio-system.svc.cluster.local:9411/api/v2/spans'
+            - '--zipkin-sample-rate=1.0'
+            - '--zipkin-singlehost-spans'
+          env:
+            - name: SVCNAME
+              value: app-h
+          image: $ECR_REPO_URL/obs-tester-server:1.0
+          imagePullPolicy: IfNotPresent
+          name: obs-tester
+          ports:
+            - containerPort: 8000
+              name: http
+            - containerPort: 3000
+              name: tcp
+          resources:
+            limits:
+              cpu: 128m
+              memory: 64Mi
+      serviceAccountName: sa-app-h
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: app-i
+    version: v1
+  name: app-i-v1
+  namespace: ns-i
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app-i
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: app-i
+        version: v1
+    spec:
+      containers:
+        - args:
+            - '--log-output-level=all:debug'
+            - '--http-listen-address=:8000'
+            - '--tcp-listen-address=:3000'
+            - '--ep-duration=0'
+            - '--ep-errors=0'
+            - '--ep-headers=0'
+            - '--zipkin-reporter-endpoint=http://zipkin.istio-system.svc.cluster.local:9411/api/v2/spans'
+            - '--zipkin-sample-rate=1.0'
+            - '--zipkin-singlehost-spans'
+          env:
+            - name: SVCNAME
+              value: app-i
+          image: $ECR_REPO_URL/obs-tester-server:1.0
+          imagePullPolicy: IfNotPresent
+          name: obs-tester
+          ports:
+            - containerPort: 8000
+              name: http
+            - containerPort: 3000
+              name: tcp
+          resources:
+            limits:
+              cpu: 128m
+              memory: 64Mi
+      serviceAccountName: sa-app-i

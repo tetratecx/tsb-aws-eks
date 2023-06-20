@@ -294,18 +294,18 @@ outdir=$(pwd) ;
 #   ${outdir}/def-mtls/server.def-mtls.demo.tetrate.io-cert.pem \
 #   ${outdir}/def-mtls/root-cert.pem ;
 
-generate_server_cert ${outdir} ghi-https ;
-generate_client_cert ${outdir} ghi-mtls ;
-generate_server_cert ${outdir} ghi-mtls ;
-generate_kubernetes_ingress_secret_https \
-  ${outdir}/ghi-https/ghi-https-cert.yaml \
-  ghi-https-cert \
-  ${outdir}/ghi-https/server.ghi-https.demo.tetrate.io-key.pem \
-  ${outdir}/ghi-https/server.ghi-https.demo.tetrate.io-cert.pem ;
-generate_kubernetes_ingress_secret_mtls \
-  ${outdir}/ghi-mtls/ghi-mtls-cert.yaml \
-  ghi-mtls-cert \
-  ${outdir}/ghi-mtls/server.ghi-mtls.demo.tetrate.io-key.pem \
-  ${outdir}/ghi-mtls/server.ghi-mtls.demo.tetrate.io-cert.pem \
-  ${outdir}/ghi-mtls/root-cert.pem ;
+# generate_server_cert ${outdir} ghi-https ;
+# generate_client_cert ${outdir} ghi-mtls ;
+# generate_server_cert ${outdir} ghi-mtls ;
+# generate_kubernetes_ingress_secret_https \
+#   ${outdir}/ghi-https/ghi-https-cert.yaml \
+#   ghi-https-cert \
+#   ${outdir}/ghi-https/server.ghi-https.demo.tetrate.io-key.pem \
+#   ${outdir}/ghi-https/server.ghi-https.demo.tetrate.io-cert.pem ;
+# generate_kubernetes_ingress_secret_mtls \
+#   ${outdir}/ghi-mtls/ghi-mtls-cert.yaml \
+#   ghi-mtls-cert \
+#   ${outdir}/ghi-mtls/server.ghi-mtls.demo.tetrate.io-key.pem \
+#   ${outdir}/ghi-mtls/server.ghi-mtls.demo.tetrate.io-cert.pem \
+#   ${outdir}/ghi-mtls/root-cert.pem ;
 

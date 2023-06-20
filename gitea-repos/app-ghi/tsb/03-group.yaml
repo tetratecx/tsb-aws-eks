@@ -1,0 +1,135 @@
+---
+apiVersion: gateway.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: ghi
+  name: tier1-gateway-ghi
+spec:
+  configMode: BRIDGED
+  displayName: Tier1Gateway_GHI
+  namespaceSelector:
+    names:
+      - "mgmt/tier1-ghi"
+---
+apiVersion: gateway.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: ghi
+  name: ingress-gateway-ghi
+spec:
+  configMode: BRIDGED
+  displayName: IngressGateway_GHI
+  namespaceSelector:
+    names:
+      - "active/ingress-ghi"
+---
+apiVersion: traffic.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: ghi
+  name: traffic-d
+spec:
+  configMode: BRIDGED
+  displayName: Traffic_AppD
+  namespaceSelector:
+    names:
+      - "active/ns-g"
+---
+apiVersion: traffic.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: ghi
+  name: traffic-e
+spec:
+  configMode: BRIDGED
+  displayName: Traffic_AppE
+  namespaceSelector:
+    names:
+      - "active/ns-h"
+---
+apiVersion: traffic.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: ghi
+  name: traffic-f
+spec:
+  configMode: BRIDGED
+  displayName: Traffic_AppF
+  namespaceSelector:
+    names:
+      - "active/ns-i"
+---
+apiVersion: security.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: ghi
+  name: security-ingress-ghi
+spec:
+  configMode: BRIDGED
+  displayName: Security_IngressGHI
+  namespaceSelector:
+    names:
+      - "active/ingress-ghi"
+---
+apiVersion: security.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: ghi
+  name: security-d
+spec:
+  configMode: BRIDGED
+  displayName: Security_AppD
+  namespaceSelector:
+    names:
+      - "active/ns-g"
+---
+apiVersion: security.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: ghi
+  name: security-e
+spec:
+  configMode: BRIDGED
+  displayName: Security_AppE
+  namespaceSelector:
+    names:
+      - "active/ns-h"
+---
+apiVersion: security.tsb.tetrate.io/v2
+kind: Group
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: ghi
+  name: security-f
+spec:
+  configMode: BRIDGED
+  displayName: Security_AppF
+  namespaceSelector:
+    names:
+      - "active/ns-i"

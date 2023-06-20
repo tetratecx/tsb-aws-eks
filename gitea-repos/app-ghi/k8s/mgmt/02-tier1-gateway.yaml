@@ -1,0 +1,15 @@
+---
+apiVersion: install.tetrate.io/v1alpha1
+kind: Tier1Gateway
+metadata:
+  name: gw-tier1-ghi
+  namespace: tier1-ghi
+spec:
+  kubeSpec:
+    service:
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: tetrate:owner=bart,tetrate:team=sales:se,tetrate:purpose=poc,tetrate:lifespan=ongoing,tetrate:customer=coindcx
+        service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'true'
+        service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+        service.beta.kubernetes.io/aws-load-balancer-type: nlb
+      type: LoadBalancer

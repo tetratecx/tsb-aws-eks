@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    istio-injection: enabled
+  name: ns-g
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    istio-injection: enabled
+  name: ns-h
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    istio-injection: enabled
+  name: ns-i
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-ghi
