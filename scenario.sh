@@ -134,6 +134,11 @@ if [[ ${ACTION} = "info" ]]; then
     echo -n "." ; sleep 1 ;
   done
   echo "DONE" ;
+  echo -n "Waiting for Tier1 Gateway external hostname address of AppGHI in mgmt cluster: " ;
+  while ! appghi_tier1_hostname=$(kubectl --context ${mp_cluster_context} get svc -n tier1-ghi gw-tier1-ghi --output jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null) ; do
+    echo -n "." ; sleep 1 ;
+  done
+  echo "DONE" ;
 
   echo -n "Waiting for Tier1 Gateway external hostname address of AppABC in mgmt cluster to resolve into an ip address: " ;
   appabc_tier1_ip=$(host ${appabc_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
@@ -149,12 +154,21 @@ if [[ ${ACTION} = "info" ]]; then
     appdef_tier1_ip=$(host ${appdef_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
   done
   echo "DONE" ;
+  echo -n "Waiting for Tier1 Gateway external hostname address of AppGHI in mgmt cluster to resolve into an ip address: " ;
+  appghi_tier1_ip=$(host ${appghi_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
+  while [[ -z "${appghi_tier1_ip}" ]] ; do
+    echo -n "." ; sleep 1 ;
+    appghi_tier1_ip=$(host ${appghi_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
+  done
+  echo "DONE" ;
 
   echo ;
   print_info "appabc_tier1_hostname (mgmt cluster): ${appabc_tier1_hostname}" ;
   print_info "appabc_tier1_ip (mgmt cluster): ${appabc_tier1_ip}" ;
   print_info "appdef_tier1_hostname (mgmt cluster): ${appdef_tier1_hostname}" ;
   print_info "appdef_tier1_ip (mgmt cluster): ${appdef_tier1_ip}" ;
+  print_info "appghi_tier1_hostname (mgmt cluster): ${appghi_tier1_hostname}" ;
+  print_info "appghi_tier1_ip (mgmt cluster): ${appghi_tier1_ip}" ;
   echo ;
   
   echo ;
@@ -186,6 +200,17 @@ if [[ ${ACTION} = "info" ]]; then
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-mtls.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-key.pem --url \"https://def-mtls.demo.tetrate.io/proxy/app-f.ns-f/proxy/ifconfig.me\"" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-mtls.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-key.pem --url \"https://def-mtls.demo.tetrate.io/proxy/app-e.ns-e/proxy/ipinfo.io\"" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"def-mtls.demo.tetrate.io:443:${appdef_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/def-mtls/client.def-mtls.demo.tetrate.io-key.pem --url \"https://def-mtls.demo.tetrate.io/proxy/app-f.ns-f/proxy/ipinfo.io\"" ;
+  echo ;
+  
+  echo ;
+  print_info "HTTP Traffic to Application GHI through Tier1 in mgmt cluster" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"ghi.demo.tetrate.io:80:${appghi_tier1_ip}\" --url \"http://ghi.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
+  echo ;
+  print_info "HTTPS Traffic to Application GHI through Tier1 in mgmt cluster" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"ghi-https.demo.tetrate.io:443:${appghi_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://ghi-https.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
+  echo ;
+  print_info "MTLS Traffic to Application GHI through Tier1 in mgmt cluster" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"ghi-mtls.demo.tetrate.io:443:${appghi_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-key.pem --url \"https://ghi-mtls.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
   echo ;
 
   exit 0 ;

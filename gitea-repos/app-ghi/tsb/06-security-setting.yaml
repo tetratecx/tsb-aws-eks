@@ -12,7 +12,7 @@ spec:
   authorization:
     http:
       external:
-        uri: grpc://127.0.0.1:9191
+        uri: grpc://opa-tier1-ghi.tier1-ghi.svc.cluster.local:9191
     mode: CLUSTER
 ---
 apiVersion: security.tsb.tetrate.io/v2

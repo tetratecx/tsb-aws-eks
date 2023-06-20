@@ -1,0 +1,59 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: opa-tier1-ghi
+  name: opa-tier1-ghi
+  namespace: tier1-ghi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opa-tier1-ghi
+  template:
+    metadata:
+      labels:
+        app: opa-tier1-ghi
+    spec:
+      containers:
+        - args:
+            - run
+            - '--server'
+            - '--addr=localhost:8181'
+            - '--diagnostic-addr=0.0.0.0:8282'
+            - '--set=plugins.envoy_ext_authz_grpc.addr=:9191'
+            - '--set=plugins.envoy_ext_authz_grpc.query=data.demo.basicauth.allow'
+            - '--set=decision_logs.console=true'
+            - '--ignore=.*'
+            - /policy/policy.rego
+          image: openpolicyagent/opa:latest-envoy
+          livenessProbe:
+            httpGet:
+              path: /health?plugins
+              port: 8282
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          name: opa
+          readinessProbe:
+            httpGet:
+              path: /health?plugins
+              port: 8282
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: 128m
+              memory: 64Mi
+          securityContext:
+            runAsUser: 1111
+          volumeMounts:
+            - mountPath: /policy
+              name: opa-policy
+              readOnly: true
+      volumes:
+        - configMap:
+            name: opa-basicauth-policy
+          name: opa-policy
