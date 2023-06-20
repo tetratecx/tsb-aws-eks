@@ -39,8 +39,8 @@ aws-info                       Get eks clusters and ecr repository information
 addons-deploy                  Deploy cluster addons (argcocd, gitea)
 addons-undeploy                Undeploy cluster addons (argcocd, gitea)
 addons-info                    Get cluster addons information (argcocd, gitea)
-tsb-install                    Install tsb mp and cp
-tsb-uninstall                  Uninstall tsb mp and cp
+tsb-deploy                     Deploy tsb mp and cp
+tsb-undeploy                   Undeploy tsb mp and cp
 tsb-info                       Get tsb information
 scenario-deploy                Deploy demo scenarios
 scenario-undeploy              Undeploy demo scenarios
