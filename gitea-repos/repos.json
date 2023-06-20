@@ -8,6 +8,10 @@
     "name": "app-def"
   },
   {
+    "description": "Deployment of Application GHI",
+    "name": "app-ghi"
+  },
+  {
     "description": "TSB Administration",
     "name": "tsb-admin"
   }

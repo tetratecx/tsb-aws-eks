@@ -4,6 +4,22 @@ kind: SecuritySetting
 metadata:
   annotations:
     tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/securityGroup: security-tier1-ghi
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: ghi
+  name: tier1-opa
+spec:
+  authorization:
+    http:
+      external:
+        uri: grpc://127.0.0.1:9191
+    mode: CLUSTER
+---
+apiVersion: security.tsb.tetrate.io/v2
+kind: SecuritySetting
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/securityGroup: security-g
     tsb.tetrate.io/tenant: prod
     tsb.tetrate.io/workspace: ghi
