@@ -18,7 +18,7 @@ ARGOCD_NAMESPACE="argocd"
 #     (2) namespace (optional, default 'argocd')
 #     (3) admin user (optional, default 'admin')
 #     (4) admin password hashed (optional, default hashed 'argocd-admin')
-function argocd_helm_deploy {
+function argocd_deploy_helm {
   [[ -z "${1}" ]] && print_error "Please provide kubeconfig cluster context as 1st argument" && return 2 || local cluster_context="${1}" ;
   [[ -z "${2}" ]] && local namespace="${ARGOCD_NAMESPACE}" || local namespace="${2}" ;
   [[ -z "${3}" ]] && local admin_user="${ARGOCD_ADMIN_USER}" || local admin_user="${3}" ;
@@ -51,7 +51,7 @@ function argocd_helm_deploy {
 #   args:
 #     (1) kubeconfig cluster context
 #     (2) namespace (optional, default 'argocd')
-function argocd_helm_undeploy {
+function argocd_undeploy_helm {
   [[ -z "${1}" ]] && print_error "Please provide kubeconfig cluster context as 1st argument" && return 2 || local cluster_context="${1}" ;
   [[ -z "${2}" ]] && local namespace="${ARGOCD_NAMESPACE}" || local namespace="${2}" ;
 

@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
+readonly ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
 source ${ROOT_DIR}/helpers.sh ;
-HOST_ENV_FILE=${ROOT_DIR}/env_host.json ;
+readonly HOST_ENV_FILE=${ROOT_DIR}/env_host.json ;
 
 # Environment settings parsing
-ISTIOCTL_VERSION=$(cat ${HOST_ENV_FILE} | jq -r ".istioctl_version") ;
-KUBECTL_VERSION=$(cat ${HOST_ENV_FILE} | jq -r ".kubectl_version") ;
-TSB_REPO_PW=$(cat ${HOST_ENV_FILE} | jq -r ".tetrate_repo.password") ;
-TSB_REPO_URL=$(cat ${HOST_ENV_FILE} | jq -r ".tetrate_repo.url") ;
-TSB_REPO_USER=$(cat ${HOST_ENV_FILE} | jq -r ".tetrate_repo.user") ;
-TSB_VERSION=$(cat ${HOST_ENV_FILE} | jq -r ".tsb_version") ;
+readonly ISTIOCTL_VERSION=$(cat ${HOST_ENV_FILE} | jq -r ".istioctl_version") ;
+readonly KUBECTL_VERSION=$(cat ${HOST_ENV_FILE} | jq -r ".kubectl_version") ;
+readonly TSB_REPO_PW=$(cat ${HOST_ENV_FILE} | jq -r ".tetrate_repo.password") ;
+readonly TSB_REPO_URL=$(cat ${HOST_ENV_FILE} | jq -r ".tetrate_repo.url") ;
+readonly TSB_REPO_USER=$(cat ${HOST_ENV_FILE} | jq -r ".tetrate_repo.user") ;
+readonly TSB_VERSION=$(cat ${HOST_ENV_FILE} | jq -r ".tsb_version") ;
 
-ACTION=${1} ;
+readonly ACTION=${1} ;
 
 if [[ ${ACTION} = "check" ]]; then
 

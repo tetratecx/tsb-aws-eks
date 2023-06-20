@@ -1,20 +1,19 @@
 #!/usr/bin/env bash
-ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
+readonly ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
 source ${ROOT_DIR}/helpers.sh ;
 source ${ROOT_DIR}/addons/aws/ecr.sh ;
 source ${ROOT_DIR}/addons/aws/eks.sh ;
-source ${ROOT_DIR}/addons/helm/tsb.sh ;
-source ${ROOT_DIR}/addons/other/tctl.sh ;
+source ${ROOT_DIR}/addons/tsb/tsb.sh ;
 
-AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
-HOST_ENV_FILE=${ROOT_DIR}/env_host.json ;
+readonly AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
+readonly HOST_ENV_FILE=${ROOT_DIR}/env_host.json ;
 
-AWS_API_USER=$(cat ${AWS_ENV_FILE} | jq -r ".api_user") ;
-AWS_PROFILE=$(cat ${AWS_ENV_FILE} | jq -r ".profile") ;
+readonly AWS_API_USER=$(cat ${AWS_ENV_FILE} | jq -r ".api_user") ;
+readonly AWS_PROFILE=$(cat ${AWS_ENV_FILE} | jq -r ".profile") ;
 
-ACTION=${1} ;
+readonly CERTS_BASE_DIR="${ROOT_DIR}/certs" ;
 
-CERTS_BASE_DIR="${ROOT_DIR}/certs" ;
+readonly ACTION=${1} ;
 
 
 if [[ ${ACTION} = "deploy" ]]; then
@@ -29,7 +28,7 @@ if [[ ${ACTION} = "deploy" ]]; then
       mp_cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
       mp_cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
       mp_cluster_context=$(get_eks_cluster_context "${AWS_API_USER}" "${mp_cluster_name}" "${mp_cluster_region}") ;
-      tsb_mp_tctl_deploy "${mp_cluster_context}" "${mp_cluster_name}" "${mp_cluster_region}" "${CERTS_BASE_DIR}" ;
+      tsb_mp_deploy_tctl "${mp_cluster_context}" "${mp_cluster_name}" "${mp_cluster_region}" "${CERTS_BASE_DIR}" ;
 
       # WIP helm: tsb_mp_deploy
     fi
@@ -42,7 +41,7 @@ if [[ ${ACTION} = "deploy" ]]; then
       cp_cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
       cp_cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
       cp_cluster_context=$(get_eks_cluster_context "${AWS_API_USER}" "${cp_cluster_name}" "${cp_cluster_region}") ;
-      tsb_cp_tctl_bootstrap "${cp_cluster_context}" "${cp_cluster_name}" "${cp_cluster_region}" \
+      tsb_cp_bootstrap_tctl "${cp_cluster_context}" "${cp_cluster_name}" "${cp_cluster_region}" \
                                "${mp_cluster_context}" "${mp_cluster_name}" "${mp_cluster_region}" \
                                "${CERTS_BASE_DIR}" ;
     fi
@@ -55,7 +54,7 @@ if [[ ${ACTION} = "deploy" ]]; then
       cp_cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
       cp_cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
       cp_cluster_context=$(get_eks_cluster_context "${AWS_API_USER}" "${cp_cluster_name}" "${cp_cluster_region}") ;
-      tsb_cp_tctl_wait_ready "${cp_cluster_context}" "${cp_cluster_name}" "${cp_cluster_region}" ;
+      tsb_cp_wait_ready "${cp_cluster_context}" "${cp_cluster_name}" "${cp_cluster_region}" ;
     fi
   done
 
@@ -71,14 +70,14 @@ if [[ ${ACTION} = "undeploy" ]]; then
       mp_cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
       mp_cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
       mp_cluster_context=$(get_eks_cluster_context "${AWS_API_USER}" "${mp_cluster_name}" "${mp_cluster_region}") ;
-      tsb_mp_tctl_undeploy "${mp_cluster_context}" "${mp_cluster_name}" "${mp_cluster_region}" ;
+      tsb_mp_undeploy_tctl "${mp_cluster_context}" "${mp_cluster_name}" "${mp_cluster_region}" ;
     fi
 
     if [[ "${cluster_tsb_type}" == "cp" ]]; then
       cp_cluster_name=$(jq -r '.eks.clusters['${cluster_index}'].name' ${AWS_ENV_FILE}) ;
       cp_cluster_region=$(jq -r '.eks.clusters['${cluster_index}'].region' ${AWS_ENV_FILE}) ;
       cp_cluster_context=$(get_eks_cluster_context "${AWS_API_USER}" "${cp_cluster_name}" "${cp_cluster_region}") ;
-      tsb_cp_tctl_undeploy "${cp_cluster_context}" "${cp_cluster_name}" "${cp_cluster_region}" ;
+      tsb_cp_undeploy_tctl "${cp_cluster_context}" "${cp_cluster_name}" "${cp_cluster_region}" ;
     fi
   done
 

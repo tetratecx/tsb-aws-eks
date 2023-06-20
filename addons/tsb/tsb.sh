@@ -5,6 +5,8 @@
 #     - https://docs.tetrate.io/service-bridge/1.6.x/en-us/reference/cli/guide/index#installation
 #     - https://docs.tetrate.io/service-bridge/1.6.x/en-us/reference/cli/reference
 
+ENVOY_HTTPS_PORT=8443
+TSB_NAMESPACE="tsb"
 
 # Login as admin into tsb
 #   args:
@@ -65,7 +67,7 @@ function patch_enable_gitop_cp {
 #     (2) mp cluster name
 #     (3) mp cluster region
 #     (4) certificate base directory
-function tsb_mp_tctl_deploy {
+function tsb_mp_deploy_tctl {
   [[ -z "${1}" ]] && print_error "Please provide mp kubeconfig cluster context as 1st argument" && return 2 || local mp_cluster_context="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide mp cluster name as 2nd argument" && return 2 || local mp_cluster_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide mp cluster region as 3rd argument" && return 2 || local mp_cluster_region="${3}" ;
@@ -132,12 +134,87 @@ function tsb_mp_tctl_deploy {
   print_info "Finished installation of tsb demo management/control plane in cluster '${mp_cluster_name}' in region '${mp_cluster_region}'"
 }
 
+# Deploy tsb management plane in kubernetes using helm
+#   args:
+#     (1) kubeconfig cluster context
+#     (2) container registry
+#     (3) tsb version
+#     (4) tsb organization
+#     (5) tsb gui certificate file
+#     (6) tsb gui key file
+#     (7) xcp central certificate file
+#     (8) xcp central key file
+#     (9) root ca certificate file
+#     (10) namespace (optional, default 'tsb')
+#     (11) tsb https port (optional, default '8443')
+function tsb_mp_deploy_helm {
+  [[ -z "${1}" ]] && print_error "Please provide kubeconfig cluster context as 1st argument" && return 2 || local cluster_context="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide container registry as 2nd argument" && return 2 || local container_registry="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide tsb version as 3rd argument" && return 2 || local tsb_version="${3}" ;
+  [[ -z "${4}" ]] && print_error "Please provide tsb organization as 4th argument" && return 2 || local tsb_org="${4}" ;
+  [[ -z "${5}" ]] && print_error "Please provide tsb gui certificate file as 5th argument" && return 2 || local tsb_gui_cert_file="${5}" ;
+  [[ -z "${6}" ]] && print_error "Please provide tsb gui key file as 6th argument" && return 2 || local tsb_gui_key_file="${6}" ;
+  [[ -z "${7}" ]] && print_error "Please provide tsb xcp central certificate file as 7th argument" && return 2 || local xcp_central_cert_file="${7}" ;
+  [[ -z "${8}" ]] && print_error "Please provide xcp central key file as 8th argument" && return 2 || local xcp_central_key_file="${8}" ;
+  [[ -z "${9}" ]] && print_error "Please provide root ca certificate file as 9th argument" && return 2 || local root_ca_cert_file="${9}" ;
+  [[ -z "${10}" ]] && local namespace="${TSB_NAMESPACE}" || local namespace="${10}" ;
+  [[ -z "${11}" ]] && local envoy_https_port="${ENVOY_HTTPS_PORT}" || local envoy_https_port="${11}" ;
+
+  helm repo add tetrate-tsb-charts 'https://charts.dl.tetrate.io/public/helm/charts/' ;
+  helm repo update ;
+
+  if $(helm status tsb-mp --kube-context "${cluster_context}" --namespace "${namespace}" &>/dev/null); then
+    helm upgrade tsb-mp tetrate-tsb-charts/managementplane \
+      --kube-context "${cluster_context}" \
+      --namespace "${namespace}" \
+      --set image.registry=${container_registry} \
+      --set image.tag=${tsb_version} \
+      --set secrets.ldap.binddn='cn=admin,dc=tetrate,dc=io' \
+      --set secrets.ldap.bindpassword='admin' \
+      --set secrets.postgres.password='tsb-postgres-password' \
+      --set secrets.postgres.username='tsb' \
+      --set secrets.tsb.adminPassword='admin' \
+      --set-file secrets.tsb.cert=${tsb_gui_cert_file} \
+      --set-file secrets.tsb.key=${tsb_gui_key_file} \
+      --set secrets.xcp.autoGenerateCerts=false \
+      --set-file secrets.xcp.central.cert=${xcp_central_cert_file} \
+      --set-file secrets.xcp.central.key=${xcp_central_key_file} \
+      --set-file secrets.xcp.rootca=${root_ca_cert_file} \
+      --set spec.hub=${container_registry} \
+      --set spec.organization=${tsb_org} \
+      --set spec.components.frontEnvoy.port=${envoy_https_port} ;
+    print_info "Upgraded helm chart for tsb-mp" ;
+  else
+    helm install tsb-mp tetrate-tsb-charts/managementplane \
+      --create-namespace \
+      --kube-context "${cluster_context}" \
+      --namespace "${namespace}" \
+      --set image.registry=${container_registry} \
+      --set image.tag=${tsb_version} \
+      --set secrets.ldap.binddn='cn=admin,dc=tetrate,dc=io' \
+      --set secrets.ldap.bindpassword='admin' \
+      --set secrets.postgres.password='tsb-postgres-password' \
+      --set secrets.postgres.username='tsb' \
+      --set secrets.tsb.adminPassword='admin' \
+      --set-file secrets.tsb.cert=${tsb_gui_cert_file} \
+      --set-file secrets.tsb.key=${tsb_gui_key_file} \
+      --set secrets.xcp.autoGenerateCerts=false \
+      --set-file secrets.xcp.central.cert=${xcp_central_cert_file} \
+      --set-file secrets.xcp.central.key=${xcp_central_key_file} \
+      --set-file secrets.xcp.rootca=${root_ca_cert_file} \
+      --set spec.hub=${container_registry} \
+      --set spec.organization=${tsb_org} \
+      --set spec.components.frontEnvoy.port=${envoy_https_port} ;
+    print_info "Installed helm chart for tsb-mp" ;
+  fi
+}
+
 # Undeploy tsb management plane cluster using tctl
 #   args:
 #     (1) mp kubeconfig cluster context
 #     (2) mp cluster name
 #     (3) mp cluster region
-function tsb_mp_tctl_undeploy {
+function tsb_mp_undeploy_tctl {
   [[ -z "${1}" ]] && print_error "Please provide mp kubeconfig cluster context as 1st argument" && return 2 || local mp_cluster_context="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide mp cluster name as 2nd argument" && return 2 || local mp_cluster_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide mp cluster region as 3rd argument" && return 2 || local mp_cluster_region="${3}" ;
@@ -201,6 +278,20 @@ function tsb_mp_tctl_undeploy {
   print_info "Finished removing installation of tsb demo management/control plane in cluster '${mp_cluster_name}' in region '${mp_cluster_region}'"
 }
 
+# Undeploy tsb management plane from kubernetes using helm
+#   args:
+#     (1) kubeconfig cluster context
+#     (2) namespace (optional, default 'tsb')
+function tsb_mp_undeploy_helm {
+  [[ -z "${1}" ]] && print_error "Please provide kubeconfig cluster context as 1st argument" && return 2 || local cluster_context="${1}" ;
+  [[ -z "${2}" ]] && local namespace="${TSB_NAMESPACE}" || local namespace="${2}" ;
+
+  helm uninstall tsb-mp \
+    --kube-context "${cluster_context}" \
+    --namespace "${namespace}" ;
+  print_info "Uninstalled helm chart for tsb-mp" ;
+}
+
 # Bootstrap tsb control plane cluster installation using tctl
 #   args:
 #     (1) cp kubeconfig cluster context
@@ -210,7 +301,7 @@ function tsb_mp_tctl_undeploy {
 #     (5) mp cluster name
 #     (6) mp cluster region
 #     (7) certificate base directory
-function tsb_cp_tctl_bootstrap {
+function tsb_cp_bootstrap_tctl {
   [[ -z "${1}" ]] && print_error "Please provide cp kubeconfig cluster context as 1st argument" && return 2 || local cp_cluster_context="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide cp cluster name as 2nd argument" && return 2 || local cp_cluster_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide cp cluster region as 3rd argument" && return 2 || local cp_cluster_region="${3}" ;
@@ -289,7 +380,7 @@ function tsb_cp_tctl_bootstrap {
 #     (1) cp kubeconfig cluster context
 #     (2) cp cluster name
 #     (3) cp cluster region
-function tsb_cp_tctl_wait_ready {
+function tsb_cp_wait_ready {
   [[ -z "${1}" ]] && print_error "Please provide cp kubeconfig cluster context as 1st argument" && return 2 || local cp_cluster_context="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide cp cluster name as 2nd argument" && return 2 || local cp_cluster_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide cp cluster region as 3rd argument" && return 2 || local cp_cluster_region="${3}" ;
@@ -314,7 +405,7 @@ function tsb_cp_tctl_wait_ready {
 #     (1) cp kubeconfig cluster context
 #     (2) cp cluster name
 #     (3) cp cluster region
-function tsb_cp_tctl_undeploy {
+function tsb_cp_undeploy_tctl {
   [[ -z "${1}" ]] && print_error "Please provide cp kubeconfig cluster context as 1st argument" && return 2 || local cp_cluster_context="${1}" ;
   [[ -z "${2}" ]] && print_error "Please provide cp cluster name as 2nd argument" && return 2 || local cp_cluster_name="${2}" ;
   [[ -z "${3}" ]] && print_error "Please provide cp cluster region as 3rd argument" && return 2 || local cp_cluster_region="${3}" ;

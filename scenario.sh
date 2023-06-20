@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
+readonly ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
 source ${ROOT_DIR}/helpers.sh ;
 source ${ROOT_DIR}/addons/aws/ecr.sh ;
 source ${ROOT_DIR}/addons/aws/eks.sh ;
 source ${ROOT_DIR}/addons/helm/argocd.sh ;
 source ${ROOT_DIR}/addons/helm/gitea.sh ;
 
-AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
-ARGOCD_APPS_DIR="${ROOT_DIR}/argocd-apps" ;
-GITEA_REPOS_DIR="${ROOT_DIR}/gitea-repos" ;
-GITEA_REPOS_CONFIG="${GITEA_REPOS_DIR}/repos.json" ;
+readonly AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
+readonly ARGOCD_APPS_DIR="${ROOT_DIR}/argocd-apps" ;
+readonly GITEA_REPOS_DIR="${ROOT_DIR}/gitea-repos" ;
+readonly GITEA_REPOS_CONFIG="${GITEA_REPOS_DIR}/repos.json" ;
 
-AWS_API_USER=$(cat ${AWS_ENV_FILE} | jq -r ".api_user") ;
-AWS_PROFILE=$(cat ${AWS_ENV_FILE} | jq -r ".profile") ;
+readonly AWS_API_USER=$(cat ${AWS_ENV_FILE} | jq -r ".api_user") ;
+readonly AWS_PROFILE=$(cat ${AWS_ENV_FILE} | jq -r ".profile") ;
 
-ACTION=${1} ;
+readonly ACTION=${1} ;
 
   # Repo synchronization using git clone, add, commit and push
 #   args:

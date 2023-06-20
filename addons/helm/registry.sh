@@ -8,7 +8,7 @@ REGISTRY_NAMESPACE="registry"
 #   args:
 #     (1) kubeconfig cluster context
 #     (2) namespace (optional, default 'registry')
-function registry_helm_deploy {
+function registry_deploy_helm {
   [[ -z "${1}" ]] && print_error "Please provide kubeconfig cluster context as 1st argument" && return 2 || local cluster_context="${1}" ;
   [[ -z "${2}" ]] && local namespace="${REGISTRY_NAMESPACE}" || local namespace="${2}" ;
 
@@ -46,7 +46,7 @@ function registry_helm_deploy {
 #   args:
 #     (1) kubeconfig cluster context
 #     (2) namespace (optional, default 'registry')
-function registry_helm_undeploy {
+function registry_undeploy_helm {
   [[ -z "${1}" ]] && print_error "Please provide kubeconfig cluster context as 1st argument" && return 2 || local cluster_context="${1}" ;
   [[ -z "${2}" ]] && local namespace="${REGISTRY_NAMESPACE}" || local namespace="${2}" ;
 

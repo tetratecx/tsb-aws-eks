@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
+readonly ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
 source ${ROOT_DIR}/helpers.sh ;
 source ${ROOT_DIR}/addons/aws/eks.sh ;
 source ${ROOT_DIR}/addons/helm/argocd.sh ;
 source ${ROOT_DIR}/addons/helm/gitea.sh ;
 
-AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
-AWS_API_USER=$(cat ${AWS_ENV_FILE} | jq -r ".api_user") ;
+readonly AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
+readonly AWS_API_USER=$(cat ${AWS_ENV_FILE} | jq -r ".api_user") ;
 
-ACTION=${1} ;
+readonly ACTION=${1} ;
 
 if [[ ${ACTION} = "deploy" ]]; then
 
@@ -42,12 +42,12 @@ if [[ ${ACTION} = "deploy" ]]; then
     case ${cluster_tsb_type} in
       "mp")
         echo "Depoying addons in tsb mp cluster '${cluster_name}' in region '${cluster_region}'" ;
-        argocd_helm_deploy "${cluster_context}" ;
-        gitea_helm_deploy "${cluster_context}" ;
+        argocd_deploy_helm "${cluster_context}" ;
+        gitea_deploy_helm "${cluster_context}" ;
         ;;
       "cp")
         echo "Depoying addons in tsb cp cluster '${cluster_name}' in region '${cluster_region}'" ;
-        argocd_helm_deploy "${cluster_context}" ;
+        argocd_deploy_helm "${cluster_context}" ;
         ;;
       *)
         print_warning "Unknown tsb cluster type '${cluster_tsb_type}'" ;
@@ -101,12 +101,12 @@ if [[ ${ACTION} = "undeploy" ]]; then
       case ${cluster_tsb_type} in
         "mp")
           echo "Undepoying addons in tsb mp cluster '${cluster_name}' in region '${cluster_region}'" ;
-          argocd_helm_undeploy "${cluster_context}" ;
-          gitea_helm_undeploy "${cluster_context}" ;
+          argocd_undeploy_helm "${cluster_context}" ;
+          gitea_undeploy_helm "${cluster_context}" ;
           ;;
         "cp")
           echo "Undepoying addons in tsb cp cluster '${cluster_name}' in region '${cluster_region}'" ;
-          argocd_helm_undeploy "${cluster_context}" ;
+          argocd_undeploy_helm "${cluster_context}" ;
           ;;
         *)
           print_warning "Unknown tsb cluster type '${cluster_tsb_type}'" ;

@@ -13,7 +13,7 @@ GITEA_NAMESPACE="gitea"
 #     (2) namespace (optional, default 'gitea')
 #     (3) admin user (optional, default 'gitea-admin')
 #     (4) admin password (optional, default 'gitea-admin')
-function gitea_helm_deploy {
+function gitea_deploy_helm {
   [[ -z "${1}" ]] && print_error "Please provide kubeconfig cluster context as 1st argument" && return 2 || local cluster_context="${1}" ;
   [[ -z "${2}" ]] && local namespace="${GITEA_NAMESPACE}" || local namespace="${2}" ;
   [[ -z "${3}" ]] && local admin_user="${GITEA_ADMIN_USER}" || local admin_user="${3}" ;
@@ -48,7 +48,7 @@ function gitea_helm_deploy {
 #   args:
 #     (1) kubeconfig cluster context
 #     (2) namespace (optional, default 'gitea')
-function gitea_helm_undeploy {
+function gitea_undeploy_helm {
   [[ -z "${1}" ]] && print_error "Please provide kubeconfig cluster context as 1st argument" && return 2 || local cluster_context="${1}" ;
   [[ -z "${2}" ]] && local namespace="${GITEA_NAMESPACE}" || local namespace="${2}" ;
 

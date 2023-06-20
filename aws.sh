@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
+readonly ROOT_DIR="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )" ;
 source ${ROOT_DIR}/helpers.sh ;
 source ${ROOT_DIR}/addons/aws/ebs-csi.sh ;
 source ${ROOT_DIR}/addons/aws/ecr.sh ;
 source ${ROOT_DIR}/addons/aws/eks.sh ;
 
-AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
+readonly AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
 
-AWS_API_USER=$(cat ${AWS_ENV_FILE} | jq -r ".api_user") ;
-AWS_PROFILE=$(cat ${AWS_ENV_FILE} | jq -r ".profile") ;
-AWS_RESOURCE_PREFIX=$(cat ${AWS_ENV_FILE} | jq -r ".resource_prefix") ;
+readonly AWS_API_USER=$(cat ${AWS_ENV_FILE} | jq -r ".api_user") ;
+readonly AWS_PROFILE=$(cat ${AWS_ENV_FILE} | jq -r ".profile") ;
+readonly AWS_RESOURCE_PREFIX=$(cat ${AWS_ENV_FILE} | jq -r ".resource_prefix") ;
 
-ACTION=${1} ;
+readonly ACTION=${1} ;
 
 if [[ ${ACTION} = "login" ]]; then
 
