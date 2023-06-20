@@ -12,7 +12,6 @@ spec:
     names:
       - mgmt/tier1-ghi
       - active/ingress-ghi
-      - active/egress-ghi
       - active/ns-g
       - active/ns-h
       - active/ns-i
