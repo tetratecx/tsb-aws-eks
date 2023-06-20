@@ -11,12 +11,18 @@ metadata:
 spec:
   displayName: Tier1GW_GHI
   externalServers:
-    - clusters:
+    - authorization:
+        external:
+          uri: grpc://opa-tier1-ghi.tier1-ghi.svc.cluster.local:9191
+      clusters:
         - name: active
       hostname: ghi.demo.tetrate.io
       name: ghi-http
       port: 80
-    - clusters:
+    - authorization:
+        external:
+          uri: grpc://opa-tier1-ghi.tier1-ghi.svc.cluster.local:9191
+      clusters:
         - name: active
       hostname: ghi-https.demo.tetrate.io
       name: ghi-https
@@ -24,7 +30,10 @@ spec:
       tls:
         mode: SIMPLE
         secretName: ghi-https-cert
-    - clusters:
+    - authorization:
+        external:
+          uri: grpc://opa-tier1-ghi.tier1-ghi.svc.cluster.local:9191
+      clusters:
         - name: active
       hostname: ghi-mtls.demo.tetrate.io
       name: ghi-mtls

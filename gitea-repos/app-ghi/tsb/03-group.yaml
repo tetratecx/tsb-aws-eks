@@ -81,21 +81,6 @@ metadata:
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
     tsb.tetrate.io/workspace: ghi
-  name: security-tier1-ghi
-spec:
-  configMode: BRIDGED
-  displayName: Security_Tier1GHI
-  namespaceSelector:
-    names:
-      - mgmt/tier1-ghi
----
-apiVersion: security.tsb.tetrate.io/v2
-kind: Group
-metadata:
-  annotations:
-    tsb.tetrate.io/organization: tetrate
-    tsb.tetrate.io/tenant: prod
-    tsb.tetrate.io/workspace: ghi
   name: security-ingress-ghi
 spec:
   configMode: BRIDGED

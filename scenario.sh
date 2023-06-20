@@ -205,12 +205,18 @@ if [[ ${ACTION} = "info" ]]; then
   echo ;
   print_info "HTTP Traffic to Application GHI through Tier1 in mgmt cluster" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"ghi.demo.tetrate.io:80:${appghi_tier1_ip}\" --url \"http://ghi.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --user "alice:password" --resolve \"ghi.demo.tetrate.io:80:${appghi_tier1_ip}\" --url \"http://ghi.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --user "bob:password" --resolve \"ghi.demo.tetrate.io:80:${appghi_tier1_ip}\" --url \"http://ghi.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
   echo ;
   print_info "HTTPS Traffic to Application GHI through Tier1 in mgmt cluster" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"ghi-https.demo.tetrate.io:443:${appghi_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://ghi-https.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --user "alice:password"  --resolve \"ghi-https.demo.tetrate.io:443:${appghi_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://ghi-https.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --user "bob:password"  --resolve \"ghi-https.demo.tetrate.io:443:${appghi_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://ghi-https.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
   echo ;
   print_info "MTLS Traffic to Application GHI through Tier1 in mgmt cluster" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"ghi-mtls.demo.tetrate.io:443:${appghi_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-key.pem --url \"https://ghi-mtls.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --user "alice:password"  --resolve \"ghi-mtls.demo.tetrate.io:443:${appghi_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-key.pem --url \"https://ghi-mtls.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --user "bob:password"  --resolve \"ghi-mtls.demo.tetrate.io:443:${appghi_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-key.pem --url \"https://ghi-mtls.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
   echo ;
 
   exit 0 ;
