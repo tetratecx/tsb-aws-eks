@@ -19,10 +19,10 @@ readonly ACTION=${1} ;
   # Repo synchronization using git clone, add, commit and push
 #   args:
 #     (1) mp kubeconfig cluster context
-#     (2) ecr repo url
+#     (2) envsubst list of variables=values (ECR_REPO_URL=1.2.3.4:5000,EXTRA=extra_value)
 function create_and_sync_gitea_repos {
   [[ -z "${1}" ]] && print_error "Please provide mp kubeconfig cluster context as 1st argument" && return 2 || local mp_cluster_context="${1}" ;
-  [[ -z "${2}" ]] && print_error "Please provide ecr repo url as 2nd argument" && return 2 || local ecr_repo_url="${2}" ;
+  [[ -z "${2}" ]] && local envsubst_list="" || local envsubst_list="${2}" ;
 
   local gitea_http_url=$(gitea_get_http_url "${mp_cluster_context}") ;
   local gitea_http_url_creds=$(gitea_get_http_url_with_credentials "${mp_cluster_context}") ;
@@ -47,11 +47,11 @@ function create_and_sync_gitea_repos {
   for ((repo_index=0; repo_index<${repo_count}; repo_index++)); do
     local repo_name=$(jq -r '.['${repo_index}'].name' ${GITEA_REPOS_CONFIG}) ;
     print_info "Sync code for gitea repository '${repo_name}'" ;
-    gitea_sync_code_to_repo "${GITEA_REPOS_DIR}" "${gitea_http_url_creds}" "${repo_name}" "ECR_REPO_URL=${ecr_repo_url}" ;
+    gitea_sync_code_to_repo "${GITEA_REPOS_DIR}" "${gitea_http_url_creds}" "${repo_name}" "${envsubst_list}" ;
   done
 }
 
-  # Deploy argcd applications
+# Deploy argcd applications
 #   args:
 #     (1) kubeconfig cluster context
 #     (2) cluster name
@@ -92,7 +92,8 @@ if [[ ${ACTION} = "deploy" ]]; then
     case ${cluster_tsb_type} in
       "mp")
         # Create gitea repos and sync local code to them
-        create_and_sync_gitea_repos "${cluster_context}" "${ecr_repository_url}" ;
+        create_and_sync_gitea_repos "${cluster_context}" \
+          "ECR_REPO_URL=${ecr_repo_url},HELLO_LAMBDA_URL=62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws,GREETINGS_LAMBDA_URL=mfmcxdxtynsczbns4mxbxkqt340dpeci.lambda-url.eu-west-2.on.aws" ;
 
         # Deploy argocd applications
         deploy_argocd_applications "${cluster_context}" "${cluster_name}" "${gitea_public_url}" ;
@@ -235,13 +236,16 @@ if [[ ${ACTION} = "info" ]]; then
   
   echo ;
   print_info "HTTP Traffic to Application Lambda through Tier1 in mgmt cluster" ;
-  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"lambda.demo.tetrate.io:80:${applambda_tier1_ip}\" --url \"http://lambda.demo.tetrate.io\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"lambda.demo.tetrate.io:80:${applambda_tier1_ip}\" --url \"http://lambda.demo.tetrate.io/hello\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"lambda.demo.tetrate.io:80:${applambda_tier1_ip}\" --url \"http://lambda.demo.tetrate.io/greetings\"" ;
   echo ;
   print_info "HTTPS Traffic to Application Lambda through Tier1 in mgmt cluster" ;
-  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"lambda-https.demo.tetrate.io:443:${applambda_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://lambda-https.demo.tetrate.io\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"lambda-https.demo.tetrate.io:443:${applambda_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://lambda-https.demo.tetrate.io/hello\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"lambda-https.demo.tetrate.io:443:${applambda_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://lambda-https.demo.tetrate.io/greetings\"" ;
   echo ;
   print_info "MTLS Traffic to Application Lambda through Tier1 in mgmt cluster" ;
-  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"lambda-mtls.demo.tetrate.io:443:${applambda_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/lambda-mtls/client.lambda-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/lambda-mtls/client.lambda-mtls.demo.tetrate.io-key.pem --url \"https://lambda-mtls.demo.tetrate.io\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"lambda-mtls.demo.tetrate.io:443:${applambda_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/lambda-mtls/client.lambda-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/lambda-mtls/client.lambda-mtls.demo.tetrate.io-key.pem --url \"https://lambda-mtls.demo.tetrate.io/hello\"" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"lambda-mtls.demo.tetrate.io:443:${applambda_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/lambda-mtls/client.lambda-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/lambda-mtls/client.lambda-mtls.demo.tetrate.io-key.pem --url \"https://lambda-mtls.demo.tetrate.io/greetings\"" ;
   echo ;
 
   exit 0 ;

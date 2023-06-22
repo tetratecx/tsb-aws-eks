@@ -16,40 +16,76 @@ spec:
       port: 80
       routing:
         rules:
-          - route:
-              host: ingress-lambda/62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
-              port: 443
+          - match:
+              - uri:
+                  prefix: /hello
             modify:
               rewrite:
-                authority: 62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
+                authority: $HELLO_LAMBDA_URL
+            route:
+              host: ingress-lambda/$HELLO_LAMBDA_URL
+              port: 443
+          - match:
+              - uri:
+                  prefix: /greetings
+            modify:
+              rewrite:
+                authority: $GREETINGS_LAMBDA_URL
+            route:
+              host: ingress-lambda/$GREETINGS_LAMBDA_URL
+              port: 443
     - hostname: lambda-https.demo.tetrate.io
       name: lambda-https
       port: 443
+      routing:
+        rules:
+          - match:
+              - uri:
+                  prefix: /hello
+            modify:
+              rewrite:
+                authority: $HELLO_LAMBDA_URL
+            route:
+              host: ingress-lambda/$HELLO_LAMBDA_URL
+              port: 443
+          - match:
+              - uri:
+                  prefix: /greetings
+            modify:
+              rewrite:
+                authority: $GREETINGS_LAMBDA_URL
+            route:
+              host: ingress-lambda/$GREETINGS_LAMBDA_URL
+              port: 443
       tls:
         mode: SIMPLE
         secretName: lambda-https-cert
-      routing:
-        rules:
-          - route:
-              host: ingress-lambda/62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
-              port: 443
-            modify:
-              rewrite:
-                authority: 62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
     - hostname: lambda-mtls.demo.tetrate.io
       name: lambda-mtls
       port: 443
+      routing:
+        rules:
+          - match:
+              - uri:
+                  prefix: /hello
+            modify:
+              rewrite:
+                authority: $HELLO_LAMBDA_URL
+            route:
+              host: ingress-lambda/$HELLO_LAMBDA_URL
+              port: 443
+          - match:
+              - uri:
+                  prefix: /greetings
+            modify:
+              rewrite:
+                authority: $GREETINGS_LAMBDA_URL
+            route:
+              host: ingress-lambda/$GREETINGS_LAMBDA_URL
+              port: 443
       tls:
         mode: MUTUAL
         secretName: lambda-mtls-cert
-      routing:
-        rules:
-          - route:
-              host: ingress-lambda/62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
-              port: 443
-            modify:
-              rewrite:
-                authority: 62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
   workloadSelector:
     labels:
       app: gw-ingress-lambda

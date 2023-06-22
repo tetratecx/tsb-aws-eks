@@ -6,7 +6,7 @@ metadata:
   namespace: ingress-lambda
 spec:
   hosts:
-    - 62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
+    - $HELLO_LAMBDA_URL
   location: MESH_EXTERNAL
   ports:
     - name: https
@@ -15,12 +15,16 @@ spec:
   resolution: DNS
 ---
 apiVersion: networking.istio.io/v1beta1
-kind: DestinationRule
+kind: ServiceEntry
 metadata:
-  name: lambda-tetrate1
+  name: lambda-tetrate2
   namespace: ingress-lambda
 spec:
-  host: 62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
-  trafficPolicy:
-    tls:
-      mode: SIMPLE
+  hosts:
+    - $GREETINGS_LAMBDA_URL
+  location: MESH_EXTERNAL
+  ports:
+    - name: https
+      number: 443
+      protocol: HTTPS
+  resolution: DNS
