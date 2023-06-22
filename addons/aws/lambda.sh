@@ -143,7 +143,7 @@ function stop_lambda_function {
     --role-name "${lambda_name}-exec" 2>/dev/null ;
 }
 
-# Get the public URL of a lambda function
+# Get the public url of a lambda function
 #   args:
 #     (1) aws profile
 #     (2) lambda name
@@ -159,5 +159,23 @@ function get_lambda_function_url {
     --profile "${aws_profile}" \
     --query "FunctionUrl" \
     --region "${lambda_region}") ;
+}
+
+# Get the public fqdn of a lambda function
+#   args:
+#     (1) aws profile
+#     (2) lambda name
+#     (3) lambda region
+function get_lambda_function_fqdn {
+  [[ -z "${1}" ]] && print_error "Please provide aws profile as 1st argument" && return 2 || local aws_profile="${1}" ;
+  [[ -z "${2}" ]] && print_error "Please provide lambda name as 2nd argument" && return 2 || local lambda_name="${2}" ;
+  [[ -z "${3}" ]] && print_error "Please provide lambda region as 3rd argument" && return 2 || local lambda_region="${3}" ;
+
+  echo $(aws lambda get-function-url-config \
+    --function-name ${lambda_name} \
+    --output text \
+    --profile "${aws_profile}" \
+    --query "FunctionUrl" \
+    --region "${lambda_region}") | sed -E 's|^https?://||' | sed -E 's|/||' ;
 }
 

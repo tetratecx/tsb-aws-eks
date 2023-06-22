@@ -887,7 +887,7 @@ function gitea_sync_code_to_repo {
   # envsubst to replace environment variables (eg ecr docker repo)
   if ! [[ -z "${envsubst_list}" ]] ; then
     for envsubst_element in $(echo ${envsubst_list} | tr "," " ") ; do
-      echo "Substituting ${envsubst_element}" ;
+      print_warning "Substituting ${envsubst_element}" ;
       eval export "${envsubst_element}" ;
       for yaml_file in $(find . -type f -name "*.yaml") ; do
         envsubst < ${yaml_file} > ${yaml_file}.envsubst ;

@@ -5,6 +5,7 @@ source ${ROOT_DIR}/addons/aws/ecr.sh ;
 source ${ROOT_DIR}/addons/aws/eks.sh ;
 source ${ROOT_DIR}/addons/helm/argocd.sh ;
 source ${ROOT_DIR}/addons/helm/gitea.sh ;
+source ${ROOT_DIR}/addons/aws/lambda.sh ;
 
 readonly AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
 readonly ARGOCD_APPS_DIR="${ROOT_DIR}/argocd-apps" ;
@@ -92,8 +93,14 @@ if [[ ${ACTION} = "deploy" ]]; then
     case ${cluster_tsb_type} in
       "mp")
         # Create gitea repos and sync local code to them
+        hello_lambda_name=$(jq -r '.lambda.functions[0].name' ${AWS_ENV_FILE}) ;
+        hello_lambda_region=$(jq -r '.lambda.functions[0].region' ${AWS_ENV_FILE}) ;
+        hello_lambda_function_fqdn=$(get_lambda_function_fqdn "${AWS_PROFILE}" "${hello_lambda_name}" "${hello_lambda_region}") ;
+        greetings_lambda_name=$(jq -r '.lambda.functions[1].name' ${AWS_ENV_FILE}) ;
+        greetings_lambda_region=$(jq -r '.lambda.functions[1].region' ${AWS_ENV_FILE}) ;
+        greetings_lambda_function_fqdn=$(get_lambda_function_fqdn "${AWS_PROFILE}" "${greetings_lambda_name}" "${greetings_lambda_region}") ;
         create_and_sync_gitea_repos "${cluster_context}" \
-          "ECR_REPO_URL=${ecr_repo_url},HELLO_LAMBDA_URL=62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws,GREETINGS_LAMBDA_URL=mfmcxdxtynsczbns4mxbxkqt340dpeci.lambda-url.eu-west-2.on.aws" ;
+          "ECR_REPO_URL=${ecr_repo_url},HELLO_LAMBDA_URL=${hello_lambda_function_fqdn},GREETINGS_LAMBDA_URL=${greetings_lambda_function_fqdn}" ;
 
         # Deploy argocd applications
         deploy_argocd_applications "${cluster_context}" "${cluster_name}" "${gitea_public_url}" ;
