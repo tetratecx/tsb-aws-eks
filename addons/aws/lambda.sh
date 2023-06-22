@@ -43,6 +43,7 @@ function start_lambda_function {
     zip -j ${LAMBDA_TMP_DIR}/function.zip ${LAMBDA_TMP_DIR}/index.js ;
 
     echo -n "Creating lambda function with name '${lambda_name}' in region '${lambda_region}': " ;
+    # We do this in a while loop as the first several attempts fail due to IAM not ready and checking IAM resources created was not sufficient
     while ! $(aws lambda create-function \
                 --function-name "${lambda_name}" \
                 --handler index.handler \
