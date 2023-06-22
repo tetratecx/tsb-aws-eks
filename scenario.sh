@@ -139,6 +139,11 @@ if [[ ${ACTION} = "info" ]]; then
     echo -n "." ; sleep 1 ;
   done
   echo "DONE" ;
+  echo -n "Waiting for Tier1 Gateway external hostname address of AppLambda in mgmt cluster: " ;
+  while ! applambda_tier1_hostname=$(kubectl --context ${mp_cluster_context} get svc -n tier1-lambda gw-tier1-lambda --output jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null) ; do
+    echo -n "." ; sleep 1 ;
+  done
+  echo "DONE" ;
 
   echo -n "Waiting for Tier1 Gateway external hostname address of AppABC in mgmt cluster to resolve into an ip address: " ;
   appabc_tier1_ip=$(host ${appabc_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
@@ -161,6 +166,13 @@ if [[ ${ACTION} = "info" ]]; then
     appghi_tier1_ip=$(host ${appghi_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
   done
   echo "DONE" ;
+  echo -n "Waiting for Tier1 Gateway external hostname address of AppLambda in mgmt cluster to resolve into an ip address: " ;
+  applambda_tier1_ip=$(host ${applambda_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
+  while [[ -z "${applambda_tier1_ip}" ]] ; do
+    echo -n "." ; sleep 1 ;
+    applambda_tier1_ip=$(host ${applambda_tier1_hostname} | awk '/has address/ { print $4 }' | head -1 ) ;
+  done
+  echo "DONE" ;
 
   echo ;
   print_info "appabc_tier1_hostname (mgmt cluster): ${appabc_tier1_hostname}" ;
@@ -169,6 +181,8 @@ if [[ ${ACTION} = "info" ]]; then
   print_info "appdef_tier1_ip (mgmt cluster): ${appdef_tier1_ip}" ;
   print_info "appghi_tier1_hostname (mgmt cluster): ${appghi_tier1_hostname}" ;
   print_info "appghi_tier1_ip (mgmt cluster): ${appghi_tier1_ip}" ;
+  print_info "applambda_tier1_hostname (mgmt cluster): ${applambda_tier1_hostname}" ;
+  print_info "applambda_tier1_ip (mgmt cluster): ${applambda_tier1_ip}" ;
   echo ;
   
   echo ;
@@ -217,6 +231,17 @@ if [[ ${ACTION} = "info" ]]; then
   print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"ghi-mtls.demo.tetrate.io:443:${appghi_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-key.pem --url \"https://ghi-mtls.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --user "alice:password"  --resolve \"ghi-mtls.demo.tetrate.io:443:${appghi_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-key.pem --url \"https://ghi-mtls.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
   print_command "curl -v -H \"X-B3-Sampled: 1\" --user "bob:password"  --resolve \"ghi-mtls.demo.tetrate.io:443:${appghi_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/ghi-mtls/client.ghi-mtls.demo.tetrate.io-key.pem --url \"https://ghi-mtls.demo.tetrate.io/proxy/app-h.ns-h/proxy/app-i.ns-i\"" ;
+  echo ;
+  
+  echo ;
+  print_info "HTTP Traffic to Application Lambda through Tier1 in mgmt cluster" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"lambda.demo.tetrate.io:80:${applambda_tier1_ip}\" --url \"http://lambda.demo.tetrate.io\"" ;
+  echo ;
+  print_info "HTTPS Traffic to Application Lambda through Tier1 in mgmt cluster" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"lambda-https.demo.tetrate.io:443:${applambda_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --url \"https://lambda-https.demo.tetrate.io\"" ;
+  echo ;
+  print_info "MTLS Traffic to Application Lambda through Tier1 in mgmt cluster" ;
+  print_command "curl -v -H \"X-B3-Sampled: 1\" --resolve \"lambda-mtls.demo.tetrate.io:443:${applambda_tier1_ip}\" --cacert ${certs_base_dir}/root-cert.pem --cert ${certs_base_dir}/lambda-mtls/client.lambda-mtls.demo.tetrate.io-cert.pem --key ${certs_base_dir}/lambda-mtls/client.lambda-mtls.demo.tetrate.io-key.pem --url \"https://lambda-mtls.demo.tetrate.io\"" ;
   echo ;
 
   exit 0 ;

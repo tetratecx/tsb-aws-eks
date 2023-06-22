@@ -5,6 +5,6 @@ metadata:
   annotations:
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
-    tsb.tetrate.io/workspace: ghi
-  name: ghi-setting
+    tsb.tetrate.io/workspace: lambda
+  name: lambda-setting
 spec: {}

@@ -3,45 +3,54 @@ apiVersion: gateway.tsb.tetrate.io/v2
 kind: IngressGateway
 metadata:
   annotations:
-    tsb.tetrate.io/gatewayGroup: ingress-gateway-ghi
+    tsb.tetrate.io/gatewayGroup: ingress-gateway-lambda
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
-    tsb.tetrate.io/workspace: ghi
-  name: ingress-ghi
+    tsb.tetrate.io/workspace: lambda
+  name: ingress-lambda
 spec:
-  displayName: IngressGW_GHI
+  displayName: IngressGW_Lambda
   http:
-    - hostname: ghi.demo.tetrate.io
-      name: ghi-http
+    - hostname: lambda.demo.tetrate.io
+      name: lambda-http
       port: 80
       routing:
         rules:
           - route:
-              host: ns-g/app-g.ns-g.svc.cluster.local
-              port: 80
-    - hostname: ghi-https.demo.tetrate.io
-      name: ghi-https
+              host: ingress-lambda/62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
+              port: 443
+            modify:
+              rewrite:
+                authority: 62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
+    - hostname: lambda-https.demo.tetrate.io
+      name: lambda-https
       port: 443
-      routing:
-        rules:
-          - route:
-              host: ns-g/app-g.ns-g.svc.cluster.local
-              port: 80
       tls:
         mode: SIMPLE
-        secretName: ghi-https-cert
-    - hostname: ghi-mtls.demo.tetrate.io
-      name: ghi-mtls
-      port: 443
+        secretName: lambda-https-cert
       routing:
         rules:
           - route:
-              host: ns-g/app-g.ns-g.svc.cluster.local
-              port: 80
+              host: ingress-lambda/62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
+              port: 443
+            modify:
+              rewrite:
+                authority: 62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
+    - hostname: lambda-mtls.demo.tetrate.io
+      name: lambda-mtls
+      port: 443
       tls:
         mode: MUTUAL
-        secretName: ghi-mtls-cert
+        secretName: lambda-mtls-cert
+      routing:
+        rules:
+          - route:
+              host: ingress-lambda/62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
+              port: 443
+            modify:
+              rewrite:
+                authority: 62dskax6mej2sssbvnh2j2uile0rbmfb.lambda-url.eu-west-1.on.aws
   workloadSelector:
     labels:
-      app: gw-ingress-ghi
-    namespace: ingress-ghi
+      app: gw-ingress-lambda
+    namespace: ingress-lambda

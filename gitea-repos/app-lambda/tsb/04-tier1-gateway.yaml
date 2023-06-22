@@ -3,45 +3,36 @@ apiVersion: gateway.tsb.tetrate.io/v2
 kind: Tier1Gateway
 metadata:
   annotations:
-    tsb.tetrate.io/gatewayGroup: tier1-gateway-ghi
+    tsb.tetrate.io/gatewayGroup: tier1-gateway-lambda
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
-    tsb.tetrate.io/workspace: ghi
-  name: tier1-ghi
+    tsb.tetrate.io/workspace: lambda
+  name: tier1-lambda
 spec:
-  displayName: Tier1GW_GHI
+  displayName: Tier1GW_Lambda
   externalServers:
-    - authorization:
-        external:
-          uri: grpc://opa-tier1-ghi.tier1-ghi.svc.cluster.local:9191
-      clusters:
+    - clusters:
         - name: active
-      hostname: ghi.demo.tetrate.io
-      name: ghi-http
+      hostname: lambda.demo.tetrate.io
+      name: lambda-http
       port: 80
-    - authorization:
-        external:
-          uri: grpc://opa-tier1-ghi.tier1-ghi.svc.cluster.local:9191
-      clusters:
+    - clusters:
         - name: active
-      hostname: ghi-https.demo.tetrate.io
-      name: ghi-https
+      hostname: lambda-https.demo.tetrate.io
+      name: lambda-https
       port: 443
       tls:
         mode: SIMPLE
-        secretName: ghi-https-cert
-    - authorization:
-        external:
-          uri: grpc://opa-tier1-ghi.tier1-ghi.svc.cluster.local:9191
-      clusters:
+        secretName: lambda-https-cert
+    - clusters:
         - name: active
-      hostname: ghi-mtls.demo.tetrate.io
-      name: ghi-mtls
+      hostname: lambda-mtls.demo.tetrate.io
+      name: lambda-mtls
       port: 443
       tls:
         mode: MUTUAL
-        secretName: ghi-mtls-cert
+        secretName: lambda-mtls-cert
   workloadSelector:
     labels:
-      app: gw-tier1-ghi
-    namespace: tier1-ghi
+      app: gw-tier1-lambda
+    namespace: tier1-lambda

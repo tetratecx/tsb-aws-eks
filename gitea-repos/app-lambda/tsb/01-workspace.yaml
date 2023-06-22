@@ -5,13 +5,10 @@ metadata:
   annotations:
     tsb.tetrate.io/organization: tetrate
     tsb.tetrate.io/tenant: prod
-  name: ghi
+  name: lambda
 spec:
-  displayName: WorkSpace_GHI
+  displayName: WorkSpace_Lambda
   namespaceSelector:
     names:
-      - mgmt/tier1-ghi
-      - active/ingress-ghi
-      - active/ns-g
-      - active/ns-h
-      - active/ns-i
+      - mgmt/tier1-lambda
+      - active/ingress-lambda
