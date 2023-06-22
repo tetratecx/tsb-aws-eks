@@ -1,0 +1,47 @@
+---
+apiVersion: gateway.tsb.tetrate.io/v2
+kind: Tier1Gateway
+metadata:
+  annotations:
+    tsb.tetrate.io/gatewayGroup: tier1-gateway-ghi
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+    tsb.tetrate.io/workspace: ghi
+  name: tier1-ghi
+spec:
+  displayName: Tier1GW_GHI
+  externalServers:
+    - authorization:
+        external:
+          uri: grpc://opa-tier1-ghi.tier1-ghi.svc.cluster.local:9191
+      clusters:
+        - name: active
+      hostname: ghi.demo.tetrate.io
+      name: ghi-http
+      port: 80
+    - authorization:
+        external:
+          uri: grpc://opa-tier1-ghi.tier1-ghi.svc.cluster.local:9191
+      clusters:
+        - name: active
+      hostname: ghi-https.demo.tetrate.io
+      name: ghi-https
+      port: 443
+      tls:
+        mode: SIMPLE
+        secretName: ghi-https-cert
+    - authorization:
+        external:
+          uri: grpc://opa-tier1-ghi.tier1-ghi.svc.cluster.local:9191
+      clusters:
+        - name: active
+      hostname: ghi-mtls.demo.tetrate.io
+      name: ghi-mtls
+      port: 443
+      tls:
+        mode: MUTUAL
+        secretName: ghi-mtls-cert
+  workloadSelector:
+    labels:
+      app: gw-tier1-ghi
+    namespace: tier1-ghi

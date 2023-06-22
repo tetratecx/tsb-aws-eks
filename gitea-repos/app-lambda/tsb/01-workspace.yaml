@@ -1,0 +1,17 @@
+---
+apiVersion: tsb.tetrate.io/v2
+kind: Workspace
+metadata:
+  annotations:
+    tsb.tetrate.io/organization: tetrate
+    tsb.tetrate.io/tenant: prod
+  name: ghi
+spec:
+  displayName: WorkSpace_GHI
+  namespaceSelector:
+    names:
+      - mgmt/tier1-ghi
+      - active/ingress-ghi
+      - active/ns-g
+      - active/ns-h
+      - active/ns-i

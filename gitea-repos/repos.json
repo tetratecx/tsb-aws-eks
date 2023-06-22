@@ -12,6 +12,10 @@
     "name": "app-ghi"
   },
   {
+    "description": "Deployment of Application Lambda",
+    "name": "app-lambda"
+  },
+  {
     "description": "TSB Administration",
     "name": "tsb-admin"
   }

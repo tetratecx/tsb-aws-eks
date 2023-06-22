@@ -264,48 +264,63 @@ outdir=$(pwd) ;
 # generate_tsb_gui_cert ${outdir} "tetrate" ;
 # generate_xcp_central_cert ${outdir} "tetrate" ;
 
-# generate_server_cert ${outdir} abc-https ;
-# generate_client_cert ${outdir} abc-mtls ;
-# generate_server_cert ${outdir} abc-mtls ;
-# generate_kubernetes_ingress_secret_https \
-#   ${outdir}/abc-https/abc-https-cert.yaml \
-#   abc-https-cert \
-#   ${outdir}/abc-https/server.abc-https.demo.tetrate.io-key.pem \
-#   ${outdir}/abc-https/server.abc-https.demo.tetrate.io-cert.pem ;
-# generate_kubernetes_ingress_secret_mtls \
-#   ${outdir}/abc-mtls/abc-mtls-cert.yaml \
-#   abc-mtls-cert \
-#   ${outdir}/abc-mtls/server.abc-mtls.demo.tetrate.io-key.pem \
-#   ${outdir}/abc-mtls/server.abc-mtls.demo.tetrate.io-cert.pem \
-#   ${outdir}/abc-mtls/root-cert.pem ;
+generate_server_cert ${outdir} failover-https ;
+generate_client_cert ${outdir} failover-mtls ;
+generate_server_cert ${outdir} failover-mtls ;
+generate_kubernetes_ingress_secret_https \
+  ${outdir}/failover-https/failover-https-cert.yaml \
+  failover-https-cert \
+  ${outdir}/failover-https/server.failover-https.demo.tetrate.io-key.pem \
+  ${outdir}/failover-https/server.failover-https.demo.tetrate.io-cert.pem ;
+generate_kubernetes_ingress_secret_mtls \
+  ${outdir}/failover-mtls/failover-mtls-cert.yaml \
+  failover-mtls-cert \
+  ${outdir}/failover-mtls/server.failover-mtls.demo.tetrate.io-key.pem \
+  ${outdir}/failover-mtls/server.failover-mtls.demo.tetrate.io-cert.pem \
+  ${outdir}/failover-mtls/root-cert.pem ;
 
-# generate_server_cert ${outdir} def-https ;
-# generate_client_cert ${outdir} def-mtls ;
-# generate_server_cert ${outdir} def-mtls ;
-# generate_kubernetes_ingress_secret_https \
-#   ${outdir}/def-https/def-https-cert.yaml \
-#   def-https-cert \
-#   ${outdir}/def-https/server.def-https.demo.tetrate.io-key.pem \
-#   ${outdir}/def-https/server.def-https.demo.tetrate.io-cert.pem ;
-# generate_kubernetes_ingress_secret_mtls \
-#   ${outdir}/def-mtls/def-mtls-cert.yaml \
-#   def-mtls-cert \
-#   ${outdir}/def-mtls/server.def-mtls.demo.tetrate.io-key.pem \
-#   ${outdir}/def-mtls/server.def-mtls.demo.tetrate.io-cert.pem \
-#   ${outdir}/def-mtls/root-cert.pem ;
+generate_server_cert ${outdir} egress-https ;
+generate_client_cert ${outdir} egress-mtls ;
+generate_server_cert ${outdir} egress-mtls ;
+generate_kubernetes_ingress_secret_https \
+  ${outdir}/egress-https/egress-https-cert.yaml \
+  egress-https-cert \
+  ${outdir}/egress-https/server.egress-https.demo.tetrate.io-key.pem \
+  ${outdir}/egress-https/server.egress-https.demo.tetrate.io-cert.pem ;
+generate_kubernetes_ingress_secret_mtls \
+  ${outdir}/egress-mtls/egress-mtls-cert.yaml \
+  egress-mtls-cert \
+  ${outdir}/egress-mtls/server.egress-mtls.demo.tetrate.io-key.pem \
+  ${outdir}/egress-mtls/server.egress-mtls.demo.tetrate.io-cert.pem \
+  ${outdir}/egress-mtls/root-cert.pem ;
 
-# generate_server_cert ${outdir} ghi-https ;
-# generate_client_cert ${outdir} ghi-mtls ;
-# generate_server_cert ${outdir} ghi-mtls ;
-# generate_kubernetes_ingress_secret_https \
-#   ${outdir}/ghi-https/ghi-https-cert.yaml \
-#   ghi-https-cert \
-#   ${outdir}/ghi-https/server.ghi-https.demo.tetrate.io-key.pem \
-#   ${outdir}/ghi-https/server.ghi-https.demo.tetrate.io-cert.pem ;
-# generate_kubernetes_ingress_secret_mtls \
-#   ${outdir}/ghi-mtls/ghi-mtls-cert.yaml \
-#   ghi-mtls-cert \
-#   ${outdir}/ghi-mtls/server.ghi-mtls.demo.tetrate.io-key.pem \
-#   ${outdir}/ghi-mtls/server.ghi-mtls.demo.tetrate.io-cert.pem \
-#   ${outdir}/ghi-mtls/root-cert.pem ;
+generate_server_cert ${outdir} opa-https ;
+generate_client_cert ${outdir} opa-mtls ;
+generate_server_cert ${outdir} opa-mtls ;
+generate_kubernetes_ingress_secret_https \
+  ${outdir}/opa-https/opa-https-cert.yaml \
+  opa-https-cert \
+  ${outdir}/opa-https/server.opa-https.demo.tetrate.io-key.pem \
+  ${outdir}/opa-https/server.opa-https.demo.tetrate.io-cert.pem ;
+generate_kubernetes_ingress_secret_mtls \
+  ${outdir}/opa-mtls/opa-mtls-cert.yaml \
+  opa-mtls-cert \
+  ${outdir}/opa-mtls/server.opa-mtls.demo.tetrate.io-key.pem \
+  ${outdir}/opa-mtls/server.opa-mtls.demo.tetrate.io-cert.pem \
+  ${outdir}/opa-mtls/root-cert.pem ;
+
+generate_server_cert ${outdir} lambda-https ;
+generate_client_cert ${outdir} lambda-mtls ;
+generate_server_cert ${outdir} lambda-mtls ;
+generate_kubernetes_ingress_secret_https \
+  ${outdir}/lambda-https/lambda-https-cert.yaml \
+  lambda-https-cert \
+  ${outdir}/lambda-https/server.lambda-https.demo.tetrate.io-key.pem \
+  ${outdir}/lambda-https/server.lambda-https.demo.tetrate.io-cert.pem ;
+generate_kubernetes_ingress_secret_mtls \
+  ${outdir}/lambda-mtls/lambda-mtls-cert.yaml \
+  lambda-mtls-cert \
+  ${outdir}/lambda-mtls/server.lambda-mtls.demo.tetrate.io-key.pem \
+  ${outdir}/lambda-mtls/server.lambda-mtls.demo.tetrate.io-cert.pem \
+  ${outdir}/lambda-mtls/root-cert.pem ;
 
