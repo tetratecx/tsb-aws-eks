@@ -1,0 +1,22 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: lambda-tetrate1
+  namespace: ingress-lambda
+spec:
+  host: $HELLO_LAMBDA_URL
+  trafficPolicy:
+    tls:
+      mode: SIMPLE
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: lambda-tetrate2
+  namespace: ingress-lambda
+spec:
+  host: $GREETINGS_LAMBDA_URL
+  trafficPolicy:
+    tls:
+      mode: SIMPLE
