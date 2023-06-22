@@ -42,6 +42,20 @@
       }
     ]
   },
+  "lambda": {
+    "functions": [
+      {
+        "message": "Hello from lambda_tetrate1 in eu-west-1 by Tetrate!",
+        "name": "lambda_tetrate1",
+        "region": "eu-west-1"
+      },
+      {
+        "message": "Greetings from lambda_tetrate2 in eu-west-2 by Tetrate!",
+        "name": "lambda_tetrate2",
+        "region": "eu-west-2"
+      }
+    ]
+  },
   "profile": "tetrate-aws-tsb-poc",
   "resource_prefix": "tsb-coindcx"
 }

@@ -4,6 +4,7 @@ source ${ROOT_DIR}/helpers.sh ;
 source ${ROOT_DIR}/addons/aws/ebs-csi.sh ;
 source ${ROOT_DIR}/addons/aws/ecr.sh ;
 source ${ROOT_DIR}/addons/aws/eks.sh ;
+source ${ROOT_DIR}/addons/aws/lambda.sh ;
 
 readonly AWS_ENV_FILE=${ROOT_DIR}/env_aws.json ;
 
@@ -12,6 +13,9 @@ readonly AWS_PROFILE=$(cat ${AWS_ENV_FILE} | jq -r ".profile") ;
 readonly AWS_RESOURCE_PREFIX=$(cat ${AWS_ENV_FILE} | jq -r ".resource_prefix") ;
 
 readonly ACTION=${1} ;
+
+# Avoid aws cli to bock the console during script execution
+export AWS_PAGER="" ;
 
 if [[ ${ACTION} = "login" ]]; then
 
@@ -79,6 +83,16 @@ if [[ ${ACTION} = "up" ]]; then
   repo_tags=$(jq -r '.ecr.tags' ${AWS_ENV_FILE}) ;
   sync_tsb_images_to_ecr "${AWS_PROFILE}" "${repo_region}" "${repo_tags}" ;
 
+  # Start lambda functions
+  lambda_count=$(jq '.lambda.functions | length' ${AWS_ENV_FILE}) ;
+  for ((lambda_index=0; lambda_index<${lambda_count}; lambda_index++)); do
+    lambda_message=$(jq -r '.lambda.functions['${lambda_index}'].message' ${AWS_ENV_FILE}) ;
+    lambda_name=$(jq -r '.lambda.functions['${lambda_index}'].name' ${AWS_ENV_FILE}) ;
+    lambda_region=$(jq -r '.lambda.functions['${lambda_index}'].region' ${AWS_ENV_FILE}) ;
+
+    start_lambda_function "${AWS_PROFILE}" "${lambda_name}" "${lambda_region}" "${lambda_message}" ;
+  done
+
   exit 0 ;
 fi
 
@@ -137,6 +151,16 @@ if [[ ${ACTION} = "down" ]]; then
     delete_tsb_ecr_repos "${AWS_PROFILE}" "${repo_region}" ;
   fi
 
+  # Delete lambda functions
+  lambda_count=$(jq '.lambda.functions | length' ${AWS_ENV_FILE}) ;
+  for ((lambda_index=0; lambda_index<${lambda_count}; lambda_index++)); do
+    lambda_message=$(jq -r '.lambda.functions['${lambda_index}'].message' ${AWS_ENV_FILE}) ;
+    lambda_name=$(jq -r '.lambda.functions['${lambda_index}'].name' ${AWS_ENV_FILE}) ;
+    lambda_region=$(jq -r '.lambda.functions['${lambda_index}'].region' ${AWS_ENV_FILE}) ;
+
+    stop_lambda_function "${AWS_PROFILE}" "${lambda_name}" "${lambda_region}" ;
+  done
+
   exit 0 ;
 fi
 
@@ -154,11 +178,21 @@ if [[ ${ACTION} = "info" ]]; then
     echo
   done
 
-
   repo_region=$(jq -r '.ecr.region' ${AWS_ENV_FILE}) ;
   ecr_repository_url=$(get_ecr_repository_url "${AWS_PROFILE}" "${repo_region}") ;
   print_info "ECR Repository URL: ${ecr_repository_url}" ;
   echo
+
+  lambda_count=$(jq '.lambda.functions | length' ${AWS_ENV_FILE}) ;
+  for ((lambda_index=0; lambda_index<${lambda_count}; lambda_index++)); do
+    lambda_message=$(jq -r '.lambda.functions['${lambda_index}'].message' ${AWS_ENV_FILE}) ;
+    lambda_name=$(jq -r '.lambda.functions['${lambda_index}'].name' ${AWS_ENV_FILE}) ;
+    lambda_region=$(jq -r '.lambda.functions['${lambda_index}'].region' ${AWS_ENV_FILE}) ;
+    lambda_function_url=$(get_lambda_function_url "${AWS_PROFILE}" "${lambda_name}" "${lambda_region}") ;
+
+    print_info "AWS Lambda function '${lambda_name}' in region '${lambda_region}': ${lambda_function_url}" ;
+    echo
+  done
 
   exit 0 ;
 fi
