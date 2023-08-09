@@ -100,7 +100,7 @@ if [[ ${ACTION} = "deploy" ]]; then
         greetings_lambda_region=$(jq -r '.lambda.functions[1].region' ${AWS_ENV_FILE}) ;
         greetings_lambda_function_fqdn=$(get_lambda_function_fqdn "${AWS_PROFILE}" "${greetings_lambda_name}" "${greetings_lambda_region}") ;
         create_and_sync_gitea_repos "${cluster_context}" \
-          "ECR_REPO_URL=${ecr_repo_url},HELLO_LAMBDA_URL=${hello_lambda_function_fqdn},GREETINGS_LAMBDA_URL=${greetings_lambda_function_fqdn}" ;
+          "ECR_REPO_URL=${ecr_repository_url},HELLO_LAMBDA_URL=${hello_lambda_function_fqdn},GREETINGS_LAMBDA_URL=${greetings_lambda_function_fqdn}" ;
 
         # Deploy argocd applications
         deploy_argocd_applications "${cluster_context}" "${cluster_name}" "${gitea_public_url}" ;
